@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/generative-ai-go/genai"
 	"github.com/pgvector/pgvector-go"
 	"github.com/tmc/langchaingo/llms/ollama"
 )
@@ -80,7 +81,7 @@ func getFileHash(content string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func getEmbedding(ctx context.Context, text string) ([]float32, error) {
+func getIndexerEmbedding(ctx context.Context, text string) ([]float32, error) {
 	if indexerUseOllama {
 		embeddings, err := indexerOllamaEmbedClient.CreateEmbedding(ctx, []string{text})
 		if err != nil {
@@ -91,8 +92,13 @@ func getEmbedding(ctx context.Context, text string) ([]float32, error) {
 		}
 		return embeddings[0], nil
 	}
-	// Fallback or error if no embedding client is configured
-	return nil, fmt.Errorf("nenhum cliente de embedding configurado")
+
+	em := indexerGeminiClient.EmbeddingModel("text-embedding-004")
+	res, err := em.EmbedContent(ctx, genai.Text(text))
+	if err != nil {
+		return nil, err
+	}
+	return res.Embedding.Values, nil
 }
 
 func processFile(ctx context.Context, path string, rootDir string) (int, error) {
@@ -135,7 +141,7 @@ func processFile(ctx context.Context, path string, rootDir string) (int, error) 
 
 	inserted := 0
 	for i, chunkText := range textChunks {
-		embedding, err := getEmbedding(ctx, chunkText)
+		embedding, err := getIndexerEmbedding(ctx, chunkText)
 		if err != nil {
 			log.Printf("⚠️  Erro no embedding chunk %d de %s: %v", i, relPath, err)
 			continue
