@@ -246,19 +246,25 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso.`, 
 	return answer, nil
 }
 
+func respondWithError(w http.ResponseWriter, code int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
 // ============================================
 // HANDLERS HTTP
 // ============================================
 
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+		respondWithError(w, http.StatusMethodNotAllowed, "Método não permitido")
 		return
 	}
 
 	var req SearchRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		respondWithError(w, http.StatusBadRequest, "JSON inválido")
 		return
 	}
 
@@ -269,7 +275,7 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	results, err := searchCodebase(r.Context(), req.Query, req.Limit)
 	if err != nil {
 		log.Println("Erro na busca:", err)
-		http.Error(w, "Erro ao buscar", http.StatusInternalServerError)
+		respondWithError(w, http.StatusInternalServerError, "Erro ao buscar: "+err.Error())
 		return
 	}
 
@@ -279,13 +285,13 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 
 func handleChat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+		respondWithError(w, http.StatusMethodNotAllowed, "Método não permitido")
 		return
 	}
 
 	var req ChatRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		respondWithError(w, http.StatusBadRequest, "JSON inválido")
 		return
 	}
 
@@ -293,7 +299,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 	searchResults, err := searchCodebase(r.Context(), req.Question, 5)
 	if err != nil {
 		log.Println("Erro na busca:", err)
-		http.Error(w, "Erro ao buscar código", http.StatusInternalServerError)
+		respondWithError(w, http.StatusInternalServerError, "Erro ao buscar código: "+err.Error())
 		return
 	}
 
@@ -301,7 +307,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 	answer, err := generateAnswer(r.Context(), req.Question, searchResults)
 	if err != nil {
 		log.Println("Erro ao gerar resposta:", err)
-		http.Error(w, "Erro ao gerar resposta", http.StatusInternalServerError)
+		respondWithError(w, http.StatusInternalServerError, "Erro ao gerar resposta: "+err.Error())
 		return
 	}
 

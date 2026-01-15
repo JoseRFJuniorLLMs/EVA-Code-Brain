@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Brain - Assistente Profissional</title>
+    <title>EVA Code Brain & Voice</title>
     <style>
         * {
             margin: 0;
@@ -13,97 +13,205 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a0a1f 0%, #0f1a2e 100%);
+            color: #ffb3d9;
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ffb3d9, #b3d9ff);
+            border-radius: 4px;
+        }
+
+        /* Header */
         .header {
-            background: rgba(30, 27, 75, 0.8);
+            background: rgba(26, 10, 31, 0.8);
             backdrop-filter: blur(10px);
-            border-bottom: 2px solid #6366f1;
+            border-bottom: 2px solid rgba(255, 179, 217, 0.3);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            z-index: 10;
         }
 
         .logo h1 {
-            background: linear-gradient(135deg, #6366f1, #a855f7);
+            background: linear-gradient(135deg, #ffb3d9, #b3d9ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+            text-shadow: 0 0 20px rgba(255, 179, 217, 0.4);
         }
 
-        .stats {
-            display: flex;
-            gap: 2rem;
-            font-size: 0.9rem;
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .stat-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #6366f1;
-        }
-
-        .stat-label {
-            color: #94a3b8;
-            font-size: 0.75rem;
-        }
-
+        /* Layout */
         .container {
-            flex: 1;
             display: flex;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-            gap: 1rem;
-            padding: 1rem;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
             overflow: hidden;
         }
 
+        /* Panels */
+        .panel {
+            background: rgba(255, 179, 217, 0.03);
+            border: 1px solid rgba(255, 179, 217, 0.2);
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            padding: 15px;
+            background: rgba(255, 179, 217, 0.05);
+            border-bottom: 1px solid rgba(255, 179, 217, 0.2);
+            font-weight: bold;
+            color: #b3d9ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Left Panel - Voice */
+        .voice-panel {
+            width: 350px;
+            flex-shrink: 0;
+            gap: 15px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        /* Right Panel - Chat */
         .chat-panel {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: rgba(30, 27, 75, 0.5);
-            border-radius: 12px;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            overflow: hidden;
         }
 
+        /* Voice Controls */
+        .control-group {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 179, 217, 0.1);
+        }
+
+        .label {
+            font-size: 12px;
+            color: #b3b3cc;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 179, 217, 0.3);
+            color: #ffb3d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #b3d9ff;
+            box-shadow: 0 0 10px rgba(179, 217, 255, 0.2);
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #ffb3d9, #b3d9ff);
+            color: #1a0a1f;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 179, 217, 0.3);
+        }
+
+        button:disabled {
+            background: #4a4a4a;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        button.stop-btn {
+            background: linear-gradient(135deg, #ff6b9d, #ff8fa3);
+        }
+
+        /* Metrics */
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            background: #666;
+        }
+
+        .status-indicator.active {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .status-indicator.connecting {
+            background: #ffff00;
+        }
+
+        .status-indicator.error {
+            background: #ff0000;
+        }
+
+        /* Chat Messages */
         .messages {
             flex: 1;
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 15px;
         }
 
         .message {
             display: flex;
-            gap: 1rem;
-            animation: slideIn 0.3s ease;
+            gap: 15px;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
         }
 
-        @keyframes slideIn {
+        @keyframes fadeIn {
             from {
                 opacity: 0;
                 transform: translateY(10px);
@@ -116,217 +224,69 @@
         }
 
         .message.user {
+            align-self: flex-end;
             flex-direction: row-reverse;
         }
 
         .message-avatar {
             width: 40px;
             height: 40px;
-            border-radius: 50%;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            font-size: 20px;
+            background: rgba(255, 179, 217, 0.1);
+            border: 1px solid rgba(255, 179, 217, 0.3);
             flex-shrink: 0;
         }
 
-        .message.user .message-avatar {
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-        }
-
-        .message.assistant .message-avatar {
-            background: linear-gradient(135deg, #10b981, #3b82f6);
-        }
-
         .message-content {
-            max-width: 70%;
-            background: rgba(51, 65, 85, 0.5);
-            padding: 1rem;
-            border-radius: 12px;
-            line-height: 1.6;
+            background: rgba(255, 179, 217, 0.05);
+            border: 1px solid rgba(255, 179, 217, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.5;
+            position: relative;
         }
 
         .message.user .message-content {
-            background: rgba(99, 102, 241, 0.2);
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: rgba(179, 217, 255, 0.1);
+            border-color: rgba(179, 217, 255, 0.2);
         }
 
-        .source-files {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(99, 102, 241, 0.2);
+        /* Chat Input */
+        .input-area {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 179, 217, 0.2);
         }
 
-        .source-files-title {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin-bottom: 0.5rem;
+        .input-row {
+            display: flex;
+            gap: 10px;
         }
 
         .file-tag {
             display: inline-block;
-            background: rgba(99, 102, 241, 0.2);
-            padding: 0.25rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            margin: 0.25rem;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-        }
-
-        .input-area {
-            padding: 1.5rem;
-            background: rgba(15, 23, 42, 0.8);
-            border-top: 1px solid rgba(99, 102, 241, 0.3);
-        }
-
-        .input-container {
-            display: flex;
-            gap: 1rem;
-        }
-
-        input {
-            flex: 1;
-            background: rgba(51, 65, 85, 0.5);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 8px;
-            padding: 1rem;
-            color: #e2e8f0;
-            font-size: 1rem;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        button {
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        button:hover {
-            transform: scale(1.05);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading {
-            display: flex;
-            gap: 0.5rem;
-            padding: 1rem;
-        }
-
-        .loading-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #6366f1;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-
-        .loading-dot:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-
-        .loading-dot:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            80%,
-            100% {
-                transform: scale(0);
-            }
-
-            40% {
-                transform: scale(1);
-            }
-        }
-
-        .side-panel {
-            width: 300px;
-            background: rgba(30, 27, 75, 0.5);
-            border-radius: 12px;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .panel-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #a855f7;
-        }
-
-        .example-questions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .example-btn {
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            padding: 0.75rem;
-            border-radius: 8px;
-            color: #e2e8f0;
-            text-align: left;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-
-        .example-btn:hover {
-            background: rgba(99, 102, 241, 0.2);
-            border-color: #6366f1;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.5);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.5);
+            font-size: 11px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(179, 217, 255, 0.3);
+            color: #b3d9ff;
+            padding: 2px 6px;
             border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(99, 102, 241, 0.7);
-        }
-
-        code {
-            background: rgba(15, 23, 42, 0.8);
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            color: #a855f7;
+            margin-right: 5px;
+            margin-top: 5px;
         }
 
         pre {
-            background: rgba(15, 23, 42, 0.8);
-            padding: 1rem;
-            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
             overflow-x: auto;
-            margin: 1rem 0;
-            border-left: 3px solid #6366f1;
+            border-left: 3px solid #ffb3d9;
+            margin-top: 10px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -334,143 +294,135 @@
 <body>
     <div class="header">
         <div class="logo">
-            <h1>🧠 Code Brain</h1>
+            <h1>🧠 Code Brain + EVA Voice</h1>
         </div>
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-value" id="totalFiles">-</div>
-                <div class="stat-label">Arquivos</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="totalChunks">-</div>
-                <div class="stat-label">Chunks</div>
-            </div>
+        <div style="font-size: 0.8rem; opacity: 0.8;">
+            v2.1 Integrated
         </div>
     </div>
 
     <div class="container">
-        <div class="chat-panel">
+        <!-- PAINEL DE VOZ (EVA-MIND) -->
+        <div class="panel voice-panel">
+            <div class="panel-title">🎤 EVA Voice Controller</div>
+
+            <div class="control-group">
+                <label class="label">CPF (Identificação)</label>
+                <input type="text" id="cpfInput" value="12345678900" placeholder="Apenas números">
+
+                <label class="label">WebSocket URL</label>
+                <input type="text" id="wsUrlInput"
+                    value="wss://eva-mind-sdk-285161077100.europe-southwest1.run.app/ws/pcm" style="font-size: 10px;">
+
+                <button id="startBtn" onclick="startEVA()">▶️ START VOICE</button>
+                <button id="stopBtn" class="stop-btn" onclick="stopEVA()" disabled>⏹️ STOP VOICE</button>
+            </div>
+
+            <div class="control-group">
+                <div class="label">STATUS</div>
+                <div class="metric-item">
+                    <span>Estado:</span>
+                    <span id="currentState">idle <span class="status-indicator"></span></span>
+                </div>
+                <div class="metric-item">
+                    <span>Envio:</span>
+                    <span id="audioSent">0</span> pkts
+                </div>
+                <div class="metric-item">
+                    <span>Recepção:</span>
+                    <span id="audioReceived">0</span> pkts
+                </div>
+                <div class="metric-item">
+                    <span>Qualidade:</span>
+                    <span id="qualityMetric" style="color: #00ff00;">Boa</span>
+                </div>
+            </div>
+
+            <div class="control-group" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="label">LOGS DO SISTEMA</div>
+                <div id="logContainer"
+                    style="flex: 1; overflow-y: auto; font-size: 10px; color: #aaa; font-family: monospace; border-top: 1px solid #333; padding-top: 5px;">
+                    <!-- Logs aqui -->
+                </div>
+                <button onclick="document.getElementById('logContainer').innerHTML=''"
+                    style="margin-top: 10px; padding: 5px; font-size: 10px; width: auto;">Limpar Logs</button>
+            </div>
+        </div>
+
+        <!-- PAINEL DE CHAT (CODE BRAIN) -->
+        <div class="panel chat-panel">
+            <div class="panel-title">💻 Codebase Intelligence</div>
+
             <div class="messages" id="messages">
                 <div class="message assistant">
                     <div class="message-avatar">🧠</div>
                     <div class="message-content">
-                        Olá! Sou seu assistente de código. Faça perguntas sobre seu projeto e eu vou buscar nas
-                        informações indexadas.
+                        Olá! Sou o Code Brain. Posso analisar o código deste projeto.
+                        <br><br>
+                        👉 Para conversar por voz com a EVA (Médica/Geral), use o painel à esquerda.
+                        <br>
+                        👉 Para buscar no código, digite abaixo.
                     </div>
                 </div>
             </div>
-            <div class="input-area">
-                <div class="input-container">
-                    <input type="text" id="questionInput" placeholder="Ex: Como funciona o sistema de autenticação?"
-                        onkeypress="if(event.key==='Enter') askQuestion()">
-                    <button onclick="askQuestion()" id="sendBtn">Perguntar</button>
-                </div>
-            </div>
-        </div>
 
-        <div class="side-panel">
-            <div class="panel-title">💡 Exemplos</div>
-            <div class="example-questions">
-                <button class="example-btn" onclick="setQuestion(this.textContent)">
-                    Como funciona o WebSocket?
-                </button>
-                <button class="example-btn" onclick="setQuestion(this.textContent)">
-                    Onde está a lógica de autenticação?
-                </button>
-                <button class="example-btn" onclick="setQuestion(this.textContent)">
-                    Como o áudio é processado?
-                </button>
-                <button class="example-btn" onclick="setQuestion(this.textContent)">
-                    Quais são as dependências principais?
-                </button>
-                <button class="example-btn" onclick="setQuestion(this.textContent)">
-                    Explique a estrutura do banco de dados
-                </button>
+            <div class="input-area">
+                <div class="input-row">
+                    <input type="text" id="questionInput" placeholder="Ex: Como funciona o indexer.go?"
+                        onkeypress="if(event.key==='Enter') askQuestion()">
+                    <button onclick="askQuestion()" style="width: auto; margin-bottom: 0;">ENVIAR</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = ''; // Vazio = mesma origem (automatizado)
-
-        // Carrega estatísticas
-        async function loadStats() {
-            try {
-                const res = await fetch(`${API_URL}/stats`);
-                const data = await res.json();
-                document.getElementById('totalFiles').textContent = data.total_files;
-                document.getElementById('totalChunks').textContent = data.total_chunks;
-            } catch (e) {
-                console.error('Erro ao carregar stats:', e);
-            }
-        }
+        // ============================================
+        // LÓGICA DO CODE BRAIN (CHAT DE CÓDIGO)
+        // ============================================
+        const API_URL = '';
 
         function addMessage(role, content, sourceFiles = []) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
-
             const avatar = role === 'user' ? '👤' : '🧠';
 
             let html = `
                 <div class="message-avatar">${avatar}</div>
-                <div class="message-content">
-                    ${content}
+                <div class="message-content">${content}
             `;
 
-            if (sourceFiles.length > 0) {
-                html += `
-                    <div class="source-files">
-                        <div class="source-files-title">📁 Arquivos consultados:</div>
-                        ${sourceFiles.map(f => `<span class="file-tag">${f}</span>`).join('')}
-                    </div>
-                `;
+            if (sourceFiles && sourceFiles.length > 0) {
+                html += `<div style="margin-top:10px; pt-2; border-top:1px solid rgba(255,255,255,0.1)">
+                    <div style="font-size:10px; color:#aaa; margin-bottom:5px">REFERÊNCIAS:</div>
+                    ${sourceFiles.map(f => `<span class="file-tag">${f}</span>`).join('')}
+                </div>`;
             }
-
             html += `</div>`;
+
             messageDiv.innerHTML = html;
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        function addLoading() {
-            const messagesDiv = document.getElementById('messages');
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'message assistant';
-            loadingDiv.id = 'loading-message';
-            loadingDiv.innerHTML = `
-                <div class="message-avatar">🧠</div>
-                <div class="message-content">
-                    <div class="loading">
-                        <div class="loading-dot"></div>
-                        <div class="loading-dot"></div>
-                        <div class="loading-dot"></div>
-                    </div>
-                </div>
-            `;
-            messagesDiv.appendChild(loadingDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        function removeLoading() {
-            const loading = document.getElementById('loading-message');
-            if (loading) loading.remove();
-        }
-
         async function askQuestion() {
             const input = document.getElementById('questionInput');
             const question = input.value.trim();
-
             if (!question) return;
 
-            // Adiciona pergunta do usuário
             addMessage('user', question);
             input.value = '';
 
-            // Desabilita botão
-            const btn = document.getElementById('sendBtn');
-            btn.disabled = true;
-            addLoading();
+            // Loading fake
+            const loadingId = 'loading-' + Date.now();
+            const messagesDiv = document.getElementById('messages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = loadingId;
+            loadingDiv.innerHTML = `<div class="message-avatar">🧠</div><div class="message-content">Analisando código...</div>`;
+            messagesDiv.appendChild(loadingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
             try {
                 const res = await fetch(`${API_URL}/chat`, {
@@ -478,27 +430,217 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question })
                 });
-
                 const data = await res.json();
-
-                removeLoading();
-                addMessage('assistant', data.answer, data.source_files);
-
-            } catch (error) {
-                removeLoading();
-                addMessage('assistant', `❌ Erro: ${error.message}`);
-            } finally {
-                btn.disabled = false;
+                document.getElementById(loadingId).remove();
+                addMessage('assistant', data.answer.replace(/\n/g, '<br>'), data.source_files);
+            } catch (e) {
+                document.getElementById(loadingId).remove();
+                addMessage('assistant', `❌ Falha ao consultar API: ${e.message}`);
             }
         }
 
-        function setQuestion(text) {
-            document.getElementById('questionInput').value = text;
+        // ============================================
+        // LÓGICA DA EVA VOICE (EVA-MIND SDK)
+        // ============================================
+
+        // Configs
+        const TARGET_SAMPLE_RATE = 24000;
+        const CAPTURE_CHUNK_SIZE = 2400;
+
+        // Globals
+        let ws = null;
+        let audioContext = null;
+        let scriptProcessor = null;
+        let mediaStream = null;
+        let playbackContext = null;
+        let isActive = false;
+        let audioSentCount = 0;
+        let audioReceivedCount = 0;
+
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.style.color = type === 'error' ? '#ff6b9d' : (type === 'success' ? '#b3ffb3' : '#aaa');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            const container = document.getElementById('logContainer');
+            container.prepend(div); // Newest on top
         }
 
-        // Inicializa
-        loadStats();
-        setInterval(loadStats, 30000); // Atualiza stats a cada 30s
+        function updateVoiceUI(state) {
+            const indicator = document.querySelector('#currentState .status-indicator');
+            document.getElementById('currentState').childNodes[0].textContent = state + ' ';
+
+            if (state === 'active') indicator.className = 'status-indicator active';
+            else if (state === 'connecting') indicator.className = 'status-indicator connecting';
+            else if (state === 'error') indicator.className = 'status-indicator error';
+            else indicator.className = 'status-indicator';
+
+            document.getElementById('startBtn').disabled = (state === 'active' || state === 'connecting');
+            document.getElementById('stopBtn').disabled = (state !== 'active');
+        }
+
+        // Audio Playback: Int16 -> Float32
+        async function playAudio(arrayBuffer) {
+            if (!playbackContext) {
+                playbackContext = new AudioContext({ sampleRate: TARGET_SAMPLE_RATE });
+                await playbackContext.resume();
+            }
+
+            const pcm16 = new Int16Array(arrayBuffer);
+            const float32 = new Float32Array(pcm16.length);
+
+            // Convert
+            for (let i = 0; i < pcm16.length; i++) {
+                float32[i] = pcm16[i] / 32768.0;
+            }
+
+            const buffer = playbackContext.createBuffer(1, float32.length, TARGET_SAMPLE_RATE);
+            buffer.getChannelData(0).set(float32);
+
+            const source = playbackContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(playbackContext.destination);
+            source.start();
+        }
+
+        async function startEVA() {
+            const cpf = document.getElementById('cpfInput').value;
+            const wsUrl = document.getElementById('wsUrlInput').value;
+
+            if (cpf.length < 11) { alert("CPF inválido"); return; }
+
+            updateVoiceUI('connecting');
+            log('Iniciando conexão...', 'info');
+
+            try {
+                // 1. Mic Access
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: TARGET_SAMPLE_RATE,
+                        channelCount: 1
+                    }
+                });
+
+                log('Microfone autorizado.', 'success');
+
+                // 2. WebSocket
+                ws = new WebSocket(wsUrl);
+                ws.binaryType = 'arraybuffer';
+
+                ws.onopen = async () => {
+                    log('WebSocket Conectado!', 'success');
+
+                    // Register
+                    ws.send(JSON.stringify({ type: 'register', cpf: cpf }));
+                    await new Promise(r => setTimeout(r, 1000));
+
+                    // Start Call
+                    const sessionId = 'web-' + Date.now();
+                    ws.send(JSON.stringify({ type: 'start_call', cpf: cpf, session_id: sessionId }));
+
+                    startAudioCapture();
+
+                    isActive = true;
+                    updateVoiceUI('active');
+                    log('EVA Ativa. Fale agora.', 'success');
+                };
+
+                ws.onmessage = (event) => {
+                    if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+                        audioReceivedCount++;
+                        document.getElementById('audioReceived').textContent = audioReceivedCount;
+
+                        if (event.data instanceof Blob) {
+                            event.data.arrayBuffer().then(playAudio);
+                        } else {
+                            playAudio(event.data);
+                        }
+                    } else {
+                        try {
+                            const msg = JSON.parse(event.data);
+                            log(`Server: ${msg.type}`, 'info');
+                        } catch (e) { }
+                    }
+                };
+
+                ws.onerror = (e) => {
+                    log('Erro WebSocket', 'error');
+                    stopEVA();
+                };
+
+                ws.onclose = () => {
+                    log('Conexão fechada', 'info');
+                    if (isActive) stopEVA();
+                };
+
+            } catch (e) {
+                log(`Erro fatal: ${e.message}`, 'error');
+                updateVoiceUI('error');
+            }
+        }
+
+        function startAudioCapture() {
+            audioContext = new AudioContext({ sampleRate: TARGET_SAMPLE_RATE });
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            const bufferSize = 4096;
+            scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+            let pcmBuffer = [];
+
+            scriptProcessor.onaudioprocess = (e) => {
+                if (!isActive || ws?.readyState !== WebSocket.OPEN) return;
+
+                const input = e.inputBuffer.getChannelData(0);
+
+                for (let i = 0; i < input.length; i++) {
+                    pcmBuffer.push(input[i]);
+
+                    if (pcmBuffer.length >= CAPTURE_CHUNK_SIZE) {
+                        // Float32 -> Int16
+                        const pcm16 = new Int16Array(CAPTURE_CHUNK_SIZE);
+                        for (let j = 0; j < CAPTURE_CHUNK_SIZE; j++) {
+                            const s = Math.max(-1, Math.min(1, pcmBuffer[j]));
+                            pcm16[j] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+
+                        ws.send(pcm16.buffer);
+                        audioSentCount++;
+                        document.getElementById('audioSent').textContent = audioSentCount;
+
+                        pcmBuffer = [];
+                    }
+                }
+            };
+
+            source.connect(scriptProcessor);
+            scriptProcessor.connect(audioContext.destination);
+        }
+
+        function stopEVA() {
+            isActive = false;
+            updateVoiceUI('idle');
+            log('Parando sistema...', 'info');
+
+            if (ws) {
+                ws.send(JSON.stringify({ type: 'hangup' }));
+                ws.close();
+                ws = null;
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+                mediaStream = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            if (playbackContext) {
+                playbackContext.close();
+                playbackContext = null;
+            }
+        }
     </script>
 </body>
 
