@@ -23,6 +23,14 @@ const (
 	ChunkOverlap = 200
 )
 
+// Variáveis globais para o indexer
+var (
+	indexerGeminiClient      *genai.Client
+	indexerOllamaClient      *ollama.LLM
+	indexerOllamaEmbedClient *ollama.LLM
+	indexerUseOllama         bool
+)
+
 var ignoreDirs = map[string]bool{
 	".git": true, "node_modules": true, "__pycache__": true, "dist": true, "build": true,
 	"venv": true, ".idea": true, ".vscode": true, "vendor": true, "target": true, "bin": true,
