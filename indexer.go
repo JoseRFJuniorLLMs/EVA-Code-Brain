@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/pgvector/pgvector-go"
+	"github.com/tmc/langchaingo/llms/ollama"
 )
 
 // Configuração do Indexador
@@ -79,6 +80,21 @@ func getFileHash(content string) string {
 	return hex.EncodeToString(hash[:])
 }
 
+func getEmbedding(ctx context.Context, text string) ([]float32, error) {
+	if indexerUseOllama {
+		embeddings, err := indexerOllamaEmbedClient.CreateEmbedding(ctx, []string{text})
+		if err != nil {
+			return nil, err
+		}
+		if len(embeddings) == 0 || len(embeddings[0]) == 0 {
+			return nil, fmt.Errorf("embedding vazio")
+		}
+		return embeddings[0], nil
+	}
+	// Fallback or error if no embedding client is configured
+	return nil, fmt.Errorf("nenhum cliente de embedding configurado")
+}
+
 func processFile(ctx context.Context, path string, rootDir string) (int, error) {
 	contentBytes, err := os.ReadFile(path)
 	if err != nil {
@@ -143,9 +159,9 @@ func processFile(ctx context.Context, path string, rootDir string) (int, error) 
 }
 
 func runIndexer(rootDir string) {
-	fmt.Println("=" * 60)
+	fmt.Println(strings.Repeat("=", 60))
 	fmt.Println("🧠 CODE BRAIN - Indexador (Go Edition)")
-	fmt.Println("=" * 60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	absRoot, _ := filepath.Abs(rootDir)
 	projectName := filepath.Base(absRoot)
@@ -153,6 +169,40 @@ func runIndexer(rootDir string) {
 	fmt.Printf("📂 Diretório: %s\n\n", absRoot)
 
 	ctx := context.Background()
+
+	// Initialize embedding client
+	if os.Getenv("USE_OLLAMA_EMBED") == "true" {
+		indexerUseOllama = true
+	}
+
+	if indexerUseOllama {
+		fmt.Println("🦙 Modo OLLAMA ativado")
+
+		// Chat client (opcional no indexer, mas mantemos)
+		llm, err := ollama.New(ollama.WithModel(os.Getenv("OLLAMA_MODEL")))
+		if err != nil {
+			log.Fatal("Erro Ollama Chat:", err)
+		}
+		indexerOllamaClient = llm
+
+		// Embed client (CRÍTICO)
+		embedModel := os.Getenv("OLLAMA_EMBED_MODEL")
+		if embedModel == "" {
+			embedModel = "nomic-embed-text"
+		}
+
+		embedLlm, err := ollama.New(ollama.WithModel(embedModel))
+		if err != nil {
+			log.Fatal("Erro Ollama Embed:", err)
+		}
+		indexerOllamaEmbedClient = embedLlm
+
+		fmt.Printf("✅ Config: Chat=%s, Embed=%s\n", os.Getenv("OLLAMA_MODEL"), embedModel)
+	} else {
+		// TODO: Initialize Gemini client here if not using Ollama
+		fmt.Println("✨ Modo GEMINI ativado (ainda não implementado para embedding)")
+		log.Fatal("Erro: Gemini embedding não implementado. Use USE_OLLAMA_EMBED=true")
+	}
 
 	var files []string
 
@@ -207,5 +257,5 @@ func runIndexer(rootDir string) {
 	fmt.Printf("📊 Processados: %d/%d arquivos\n", filesProcessed, len(files))
 	fmt.Printf("📦 Chunks gerados: %d\n", totalChunks)
 	fmt.Printf("⏱️  Tempo: %s\n", elapsed)
-	fmt.Println("=" * 60)
+	fmt.Println(strings.Repeat("=", 60))
 }

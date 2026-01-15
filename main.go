@@ -10,9 +10,12 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/generative-ai-go/genai"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/pgvector/pgvector-go"
-	"google.golang.org/genai"
+	"github.com/tmc/langchaingo/llms/ollama"
+	"google.golang.org/api/option"
 )
 
 // ============================================
@@ -46,18 +49,27 @@ type ChatResponse struct {
 // ============================================
 
 var (
-	db           *sql.DB
+	db *sql.DB
+	// Google Gemini
 	geminiClient *genai.Client
 	geminiModel  *genai.GenerativeModel
+	// Ollama
+	// Ollama
+	ollamaClient      *ollama.LLM
+	ollamaEmbedClient *ollama.LLM
+	useOllama         bool
 )
 
 func init() {
 	var err error
 
+	// Carrega .env
+	_ = godotenv.Load()
+
 	// Conecta ao PostgreSQL
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgresql://user:password@localhost:5432/codebrain?sslmode=disable"
+		log.Fatal("❌ DATABASE_URL está vazia! Crie um arquivo .env ou configure a variável.")
 	}
 
 	db, err = sql.Open("postgres", dbURL)
@@ -71,20 +83,49 @@ func init() {
 
 	log.Println("✅ Conectado ao PostgreSQL")
 
-	// Inicializa Google Gemini
-	apiKey := os.Getenv("GOOGLE_API_KEY")
-	if apiKey == "" {
-		log.Fatal("❌ GOOGLE_API_KEY não definida")
-	}
+	// Configuração de AI
+	useOllama = os.Getenv("USE_OLLAMA") == "true"
 
-	ctx := context.Background()
-	geminiClient, err = genai.NewClient(ctx, apiKey)
-	if err != nil {
-		log.Fatal("Erro ao criar cliente Gemini:", err)
-	}
+	if useOllama {
+		log.Println("🦙 Modo OLLAMA ativado (Local AI)")
 
-	geminiModel = geminiClient.GenerativeModel("gemini-2.0-flash-exp")
-	log.Println("✅ Cliente Gemini inicializado")
+		// Cliente de Chat (Llama3)
+		chatModel := os.Getenv("OLLAMA_MODEL")
+		llm, err := ollama.New(ollama.WithModel(chatModel))
+		if err != nil {
+			log.Fatal("Erro ao criar cliente Ollama Chat:", err)
+		}
+		ollamaClient = llm
+
+		// Cliente de Embedding (Nomic)
+		embedModel := os.Getenv("OLLAMA_EMBED_MODEL")
+		if embedModel == "" {
+			embedModel = "nomic-embed-text"
+		}
+
+		embedLlm, err := ollama.New(ollama.WithModel(embedModel))
+		if err != nil {
+			log.Fatal("Erro ao criar cliente Ollama Embed:", err)
+		}
+		ollamaEmbedClient = embedLlm
+
+		log.Printf("✅ Ollama Inicializado: Chat=%s, Embed=%s", chatModel, embedModel)
+	} else {
+		// Inicializa Google Gemini
+		apiKey := os.Getenv("GOOGLE_API_KEY")
+		if apiKey == "" {
+			log.Fatal("❌ GOOGLE_API_KEY não definida")
+		}
+
+		ctx := context.Background()
+		geminiClient, err = genai.NewClient(ctx, option.WithAPIKey(apiKey))
+		if err != nil {
+			log.Fatal("Erro ao criar cliente Gemini:", err)
+		}
+
+		geminiModel = geminiClient.GenerativeModel("gemini-1.5-pro")
+		log.Println("✅ Cliente Gemini inicializado")
+	}
 }
 
 // ============================================
@@ -92,17 +133,27 @@ func init() {
 // ============================================
 
 func getEmbedding(ctx context.Context, text string) ([]float32, error) {
-	em := geminiClient.EmbeddingModel("text-embedding-004")
+	if useOllama {
+		// Usa Ollama Embeddings (Cliente Dedicado)
+		embeddings, err := ollamaEmbedClient.CreateEmbedding(ctx, []string{text})
+		if err != nil {
+			return nil, err
+		}
+		if len(embeddings) == 0 || len(embeddings[0]) == 0 {
+			return nil, fmt.Errorf("embedding vazio do Ollama")
+		}
+		return embeddings[0], nil
+	}
 
+	// Usa Google Embeddings
+	em := geminiClient.EmbeddingModel("text-embedding-004")
 	res, err := em.EmbedContent(ctx, genai.Text(text))
 	if err != nil {
 		return nil, err
 	}
-
 	if res == nil || res.Embedding == nil {
 		return nil, fmt.Errorf("embedding vazio")
 	}
-
 	return res.Embedding.Values, nil
 }
 
@@ -164,6 +215,15 @@ PERGUNTA DO USUÁRIO:
 
 Responda de forma técnica e objetiva, citando trechos de código quando relevante. 
 Se a informação não estiver no código fornecido, seja honesto sobre isso.`, context, question)
+
+	// Gera resposta
+	if useOllama {
+		resp, err := ollamaClient.Call(ctx, prompt)
+		if err != nil {
+			return "", err
+		}
+		return resp, nil
+	}
 
 	// Gera resposta com Gemini
 	resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
@@ -345,6 +405,10 @@ func main() {
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
+
+	// Servir arquivos estáticos (Frontend)
+	fs := http.FileServer(http.Dir("."))
+	http.Handle("/", fs)
 
 	port := os.Getenv("PORT")
 	if port == "" {
