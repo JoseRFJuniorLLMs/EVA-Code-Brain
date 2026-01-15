@@ -185,7 +185,7 @@ func runIndexer(rootDir string) {
 	ctx := context.Background()
 
 	// Initialize embedding client
-	if os.Getenv("USE_OLLAMA_EMBED") == "true" {
+	if os.Getenv("USE_OLLAMA") == "true" || os.Getenv("USE_OLLAMA_EMBED") == "true" {
 		indexerUseOllama = true
 	}
 
