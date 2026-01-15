@@ -2,7 +2,7 @@
 
 # Configuration
 APP_NAME="eva-code-brain"
-PORT=6666
+PORT=8088
 
 echo "[DEPLOY] Iniciando deploy do $APP_NAME..."
 
