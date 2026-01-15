@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Go
+go.sum
+bin/
+dist/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (if used in frontend dev)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
