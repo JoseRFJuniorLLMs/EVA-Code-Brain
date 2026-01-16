@@ -318,7 +318,13 @@ DIRETRIZES CRÍTICAS:
 1. Responda de forma técnica e objetiva.
 2. IMPORTANTE: Se o usuário pedir para REFATORAR, MODIFICAR ou CORRIGIR um arquivo, você DEVE PRIMEIRO usar a ferramenta "get_file" para ler o conteúdo COMPLETO e ATUAL do arquivo. NÃO confie apenas nos trechos acima (chunks), pois podem estar incompletos ou desatualizados.
 3. Se a informação não estiver no código fornecido e você precisar ver o arquivo, CHAME a ferramenta "get_file".
-4. VISUALIZAÇÃO: Para explicar fluxos, arquitetura ou relacionamentos, você PODE e DEVE usar diagramas Mermaid (dentro de blocos de código `+"`"+`mermaid`+"`"+`). Suporte a: sequenceDiagram, graph TD, erDiagram, classDiagram.`, context, history, question)
+4. VISUALIZAÇÃO: Para explicar fluxos ou arquitetura, GERE OBRIGATORIAMENTE um bloco de código Markdown com o identificador 'mermaid'.
+Exemplo:
+`+"`"+`mermaid
+sequenceDiagram
+...
+`+"`"+`
+Suporte a: sequenceDiagram, graph TD, erDiagram, classDiagram.`, context, history, question)
 
 	// Seleção de Modelo
 	log.Printf("🤖 Gerando resposta com modelo: %s", model)
