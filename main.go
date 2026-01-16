@@ -109,7 +109,11 @@ func init() {
 
 	log.Println("✅ Conectado ao PostgreSQL")
 
-	// Configuração de AI
+	// Inicializa ferramentas
+	initTools()
+	log.Printf("🔧 %d ferramentas registradas", len(toolRegistry.List()))
+
+	// Inicializa Gemini
 	useOllama, _ = strconv.ParseBool(os.Getenv("USE_OLLAMA"))
 	useGrok, _ = strconv.ParseBool(os.Getenv("USE_GROK"))
 	grokApiKey = os.Getenv("GROK_API_KEY")
