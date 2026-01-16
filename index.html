@@ -413,7 +413,7 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
 
-            const avatar = role === 'user' ? '👤' : '<img src="eva.png" style="width: 32px; height: 32px; border-radius: 50%;">';
+            const avatar = role === 'user' ? '<img src="jumento.png" style="width: 32px; height: 32px; border-radius: 50%;">' : '<img src="eva.png" style="width: 32px; height: 32px; border-radius: 50%;">';
 
             let html = `
                 <div class="message-avatar">${avatar}</div>
@@ -451,6 +451,7 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
             try {
+                console.log('📤 Enviando para backend:', { question, model: currentModel });
                 const res = await fetch(`${API_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
