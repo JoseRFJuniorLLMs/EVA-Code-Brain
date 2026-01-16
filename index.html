@@ -271,7 +271,8 @@
 
 <body>
     <div class="header">
-        <h1>🧠 EVA Code Brain</h1>
+        <h1><img src="eva.png" alt="EVA"
+                style="width: 40px; height: 40px; vertical-align: middle; margin-right: 10px;">EVA Code Brain</h1>
         <p>v3.0 Lite</p>
     </div>
 
@@ -293,9 +294,8 @@
 
         <div class="input-area">
             <div class="input-wrapper">
-                <input type="text" id="questionInput" placeholder="Digite sua pergunta..."
+                <input type="text" id="questionInput" placeholder="Digite sua pergunta e pressione Enter..."
                     onkeypress="if(event.key==='Enter') askQuestion()">
-                <button onclick="askQuestion()">Enviar</button>
             </div>
         </div>
     </div>
@@ -413,7 +413,7 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
 
-            const avatar = role === 'user' ? '👤' : '🧠';
+            const avatar = role === 'user' ? '👤' : '<img src="eva.png" style="width: 32px; height: 32px; border-radius: 50%;">';
 
             let html = `
                 <div class="message-avatar">${avatar}</div>
@@ -446,7 +446,7 @@
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'message assistant';
             loadingDiv.id = loadingId;
-            loadingDiv.innerHTML = `<div class="message-avatar">🧠</div><div class="message-content">...</div>`;
+            loadingDiv.innerHTML = `<div class="message-avatar"><img src="eva.png" style="width: 32px; height: 32px; border-radius: 50%;"></div><div class="message-content">...</div>`;
             messagesDiv.appendChild(loadingDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
