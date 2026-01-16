@@ -6,6 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVA Code Brain</title>
     <style>
+        :root {
+            --bg-primary: #0f0f1e;
+            --bg-secondary: #1a1a2e;
+            --text-primary: #ffffff;
+            --text-secondary: #ffb3d9;
+            --border-color: rgba(255, 179, 217, 0.3);
+            --message-bg: rgba(0, 0, 0, 0.3);
+            --input-bg: rgba(0, 0, 0, 0.3);
+        }
+
+        body.light-mode {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #1a1a2e;
+            --text-secondary: #d946a6;
+            --border-color: rgba(217, 70, 166, 0.3);
+            --message-bg: rgba(255, 255, 255, 0.8);
+            --input-bg: rgba(255, 255, 255, 0.9);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,74 +33,61 @@
         }
 
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a0a1f 0%, #0f1a2e 100%);
-            color: #ffb3d9;
-            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #ffb3d9, #b3d9ff);
-            border-radius: 4px;
-        }
-
-        /* Header */
         .header {
-            background: rgba(26, 10, 31, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 2px solid rgba(255, 179, 217, 0.3);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            z-index: 10;
+            background: var(--bg-secondary);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
-        .logo h1 {
-            background: linear-gradient(135deg, #ffb3d9, #b3d9ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 1.5rem;
-            text-shadow: 0 0 20px rgba(255, 179, 217, 0.4);
+        .header h1 {
+            color: var(--text-secondary);
+            font-size: 28px;
+            margin-bottom: 5px;
         }
 
-        /* Layout */
+        .header p {
+            color: var(--text-primary);
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
         .container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            position: relative;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        /* Chat Messages */
         .messages {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            scroll-behavior: smooth;
-            padding-bottom: 100px;
-            /* Space for FAB */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .message {
             display: flex;
-            gap: 15px;
-            max-width: 800px;
-            margin: 0 auto 20px auto;
+            gap: 12px;
+            padding: 15px;
+            border-radius: 12px;
+            background: var(--message-bg);
+            border: 1px solid var(--border-color);
             animation: fadeIn 0.3s ease;
         }
 
@@ -96,220 +103,22 @@
             }
         }
 
-        .message.user {
-            flex-direction: row-reverse;
-        }
-
-        .message.assistant {
-            flex-direction: row;
-        }
-
         .message-avatar {
+            font-size: 24px;
             width: 40px;
             height: 40px;
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            background: rgba(255, 179, 217, 0.1);
-            border: 1px solid rgba(255, 179, 217, 0.3);
+            border-radius: 50%;
+            background: var(--bg-secondary);
             flex-shrink: 0;
-            box-shadow: 0 0 10px rgba(255, 179, 217, 0.2);
         }
 
         .message-content {
-            background: rgba(255, 179, 217, 0.05);
-            border: 1px solid rgba(255, 179, 217, 0.1);
-            padding: 15px 20px;
-            border-radius: 12px;
-            line-height: 1.6;
-            position: relative;
-            font-size: 14px;
-        }
-
-        .message.user .message-content {
-            background: rgba(179, 217, 255, 0.1);
-            border-color: rgba(179, 217, 255, 0.2);
-            border-top-right-radius: 2px;
-        }
-
-        .message.assistant .message-content {
-            border-top-left-radius: 2px;
-        }
-
-        /* Input Area */
-        .input-area {
-            padding: 20px;
-            background: rgba(15, 26, 46, 0.95);
-            border-top: 1px solid rgba(255, 179, 217, 0.2);
-            display: flex;
-            justify-content: center;
-        }
-
-        .input-wrapper {
-            width: 100%;
-            max-width: 800px;
-            display: flex;
-            gap: 10px;
-            position: relative;
-        }
-
-        input[type="text"] {
             flex: 1;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 179, 217, 0.3);
-            color: #ffb3d9;
-            padding: 15px;
-            border-radius: 30px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            padding-right: 60px;
-            /* Space for send button */
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #b3d9ff;
-            box-shadow: 0 0 15px rgba(179, 217, 255, 0.1);
-        }
-
-        .send-btn {
-            position: absolute;
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 50%;
-            transition: all 0.2s;
-        }
-
-        .send-btn:hover {
-            background: rgba(255, 179, 217, 0.1);
-        }
-
-        /* FAB - Floating Action Button */
-        .fab-container {
-            position: fixed;
-            bottom: 100px;
-            right: 30px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .fab {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: none;
-            background: linear-gradient(135deg, #ffb3d9, #ff6b9d);
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(255, 107, 157, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .fab:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 30px rgba(255, 107, 157, 0.6);
-        }
-
-        .fab.zen-btn {
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
-            margin-bottom: 20px;
-        }
-
-        .fab.zen-btn {
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
-            margin-bottom: 20px;
-        }
-
-        .fab.connecting {
-            background: #b3b3b3;
-            animation: spin 1s infinite linear;
-        }
-
-        .fab-status {
-            font-size: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 4px 8px;
-            border-radius: 10px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-
-        .fab-container:hover .fab-status,
-        .fab.active+.fab-status {
-            opacity: 1;
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 20px rgba(255, 77, 77, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
-            }
-        }
-
-        @keyframes spin {
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Model Selector */
-        .model-selector {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            padding: 0 20px;
-        }
-
-        .model-select {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 179, 217, 0.4);
-            color: #ffb3d9;
-            padding: 8px 16px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 13px;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .model-select:hover {
-            background: rgba(255, 179, 217, 0.1);
-            border-color: #ffb3d9;
-        }
-
-        .model-select:focus {
-            box-shadow: 0 0 10px rgba(255, 179, 217, 0.3);
-        }
-
-        .model-select option {
-            background: #1a1a2e;
-            color: #ffb3d9;
+            color: var(--text-primary);
+            line-height: 1.6;
         }
 
         .file-tag {
@@ -323,34 +132,155 @@
             margin-right: 5px;
             margin-top: 5px;
         }
+
+        .model-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 0 20px;
+        }
+
+        .model-select {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .model-select:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .model-select:focus {
+            box-shadow: 0 0 10px rgba(255, 179, 217, 0.3);
+        }
+
+        .model-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .input-area {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-top: 2px solid var(--border-color);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #questionInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        #questionInput:focus {
+            border-color: var(--text-secondary);
+            box-shadow: 0 0 10px rgba(255, 179, 217, 0.2);
+        }
+
+        #questionInput::placeholder {
+            color: var(--text-primary);
+            opacity: 0.5;
+        }
+
+        button {
+            background: linear-gradient(135deg, #ffb3d9, #b3d9ff);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 179, 217, 0.4);
+        }
+
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .fab {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffb3d9, #b3d9ff);
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 179, 217, 0.5);
+        }
+
+        .fab-status {
+            position: absolute;
+            right: 70px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .fab:hover+.fab-status {
+            opacity: 1;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <div class="logo">
-            <h1>🧠 EVA Code Brain</h1>
-        </div>
-        <div style="font-size: 0.8rem; opacity: 0.6;">v3.0 Lite</div>
+        <h1>🧠 EVA Code Brain</h1>
+        <p>v3.0 Lite</p>
     </div>
 
     <div class="container">
-        <div class="messages" id="messages">
-            <div class="message assistant">
-                <div class="message-avatar">🧠</div>
-                <div class="message-content">
-                    Olá! Sou o EVA Code Brain.<br>
-                    Estou pronto para analisar seu código ou conversar por voz.<br><br>
-                    <ul>
-                        <li>📝 <b>Texto:</b> Digite abaixo para buscar no código.</li>
-                        <li>🎤 <b>Voz:</b> Clique no botão flutuante para falar.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        <div class="messages" id="messages"></div>
 
         <div class="model-selector">
-            <label for="modelSelect" style="color: #ffb3d9; margin-right: 8px; font-size: 13px;">🤖 Modelo:</label>
+            <label for="modelSelect" style="color: var(--text-secondary); margin-right: 8px; font-size: 13px;">🤖
+                Modelo:</label>
             <select id="modelSelect" class="model-select" onchange="setModel(this.value)">
                 <option value="auto">Auto (Prioridade)</option>
                 <option value="grok">Grok (xAI)</option>
@@ -365,34 +295,25 @@
             <div class="input-wrapper">
                 <input type="text" id="questionInput" placeholder="Digite sua pergunta..."
                     onkeypress="if(event.key==='Enter') askQuestion()">
-                <button class="send-btn" onclick="askQuestion()">➤</button>
+                <button onclick="askQuestion()">Enviar</button>
             </div>
         </div>
     </div>
 
-    <!-- Floating Action Button -->
     <div class="fab-container">
-        <button id="zenBtn" class="fab zen-btn" onclick="toggleZen()">
-            🧘
-        </button>
-        <div class="fab-status">Modo Zen</div>
+        <button id="zenBtn" class="fab" onclick="toggleZen()">🧘</button>
+        <div class="fab-status">Zen Mode</div>
 
-        <button id="voiceBtn" class="fab" onclick="toggleVoice()">
-            🎤
-        </button>
-        <div id="voiceStatus" class="fab-status">Toque para Falar</div>
+        <button id="voiceBtn" class="fab" onclick="toggleVoice()">🎤</button>
+        <div class="fab-status">Toque para Falar</div>
+
+        <button id="themeBtn" class="fab" onclick="toggleTheme()">🌙</button>
+        <div class="fab-status">Tema</div>
     </div>
 
     <div id="youtube-player" style="opacity: 0; position: absolute; z-index: -1;"></div>
 
-    // ... (rest of html) ...
-
-
     <script>
-        // ============================================
-        // Configurações
-        //Frontend only logic, merging existing logic into new UI
-        // ============================================
         const API_URL = '';
         const WS_URL = "wss://eva-mind-sdk-285161077100.europe-southwest1.run.app/ws/pcm";
         const CPF = "64525430249";
@@ -406,23 +327,38 @@
         let playbackContext = null;
         let isActive = false;
         let currentModel = 'auto';
+        let player;
+        let isPlayerReady = false;
 
         function setModel(model) {
             currentModel = model;
             console.log("Modelo alterado para:", model);
         }
 
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeBtn');
+
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeBtn').textContent = '☀️';
+            }
+        });
+
         // YouTube Player
-        let player;
-        let isPlayerReady = false;
-
-        // Carrega API do YouTube de forma assíncrona
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-        // Carrega API do YouTube de forma assíncrona
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -453,19 +389,16 @@
             event.target.pauseVideo();
         }
 
-        // ZEN MODE
         function toggleZen() {
             const btn = document.getElementById('zenBtn');
-
             if (!isPlayerReady) {
-                alert("Player do YouTube ainda carregando...");
+                alert("⏳ Carregando YouTube...");
                 return;
             }
-
             const playerState = player.getPlayerState();
-
-            // 1 = Playing, 2 = Paused, 5 = Cued, -1 = Unstarted
             if (playerState !== 1) {
+                player.unMute();
+                player.setVolume(50);
                 player.playVideo();
                 btn.style.opacity = '1';
                 btn.style.boxShadow = '0 0 20px #a855f7';
@@ -475,15 +408,12 @@
             }
         }
 
-        // ============================================
-        // UI Helpers
-        // ============================================
         function addMessage(role, content, sourceFiles = []) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
 
-            const avatar = role === 'user' ? '👤' : '🧠'; // Same avatar for Voice (EVA) and Code Brain for now
+            const avatar = role === 'user' ? '👤' : '🧠';
 
             let html = `
                 <div class="message-avatar">${avatar}</div>
@@ -503,9 +433,6 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // ============================================
-        // Chat Logic
-        // ============================================
         async function askQuestion() {
             const input = document.getElementById('questionInput');
             const question = input.value.trim();
@@ -541,7 +468,6 @@
                         errMsg = errJson.error || errText;
                     } catch (e) { }
 
-                    // Tratamento específico para 429 (Muitas requisições / Cota)
                     if (res.status === 429 || errMsg.includes("429") || errMsg.includes("Too Many Requests")) {
                         throw new Error("⏳ <b>Cota do Grok Excedida!</b><br>Muitas requisições. Tente novamente em alguns minutos ou altere o modelo no .env.");
                     }
@@ -552,15 +478,11 @@
                 const data = await res.json();
                 addMessage('assistant', data.answer.replace(/\n/g, '<br>'), data.source_files);
             } catch (e) {
-                const loader = document.getElementById(loadingId);
-                if (loader) loader.remove();
-                addMessage('assistant', `⚠️ ${e.message}`);
+                addMessage('assistant', `❌ ${e.message}`);
             }
         }
 
-        // ============================================
-        // Voice Logic (Toggle)
-        // ============================================
+        // Voice Logic (EVA-Mind)
         function toggleVoice() {
             if (isActive) {
                 stopEVA();
@@ -571,23 +493,18 @@
 
         function setVoiceState(state) {
             const btn = document.getElementById('voiceBtn');
-            const status = document.getElementById('voiceStatus');
-
-            btn.className = 'fab'; // Reset
-            btn.innerHTML = '🎤';
-
             if (state === 'connecting') {
-                btn.classList.add('connecting');
                 btn.innerHTML = '⌛';
-                status.textContent = 'Conectando...';
             } else if (state === 'active') {
                 isActive = true;
-                btn.classList.add('active');
                 btn.innerHTML = '⏹️';
-                status.textContent = 'Gravando (Toque para parar)';
+                btn.style.opacity = '1';
+                btn.style.boxShadow = '0 0 20px #ff6b9d';
             } else {
                 isActive = false;
-                status.textContent = 'Toque para Falar';
+                btn.innerHTML = '🎤';
+                btn.style.opacity = '0.7';
+                btn.style.boxShadow = 'none';
             }
         }
 
@@ -595,64 +512,36 @@
             setVoiceState('connecting');
 
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true,
-                        sampleRate: TARGET_SAMPLE_RATE,
-                        channelCount: 1
-                    }
-                });
-
                 ws = new WebSocket(WS_URL);
-                ws.binaryType = 'arraybuffer';
 
                 ws.onopen = async () => {
                     ws.send(JSON.stringify({ type: 'register', cpf: CPF }));
-                    await new Promise(r => setTimeout(r, 500));
+                    await new Promise(resolve => setTimeout(resolve, 2000));
 
-                    const sessionId = 'web-' + Date.now();
-                    ws.send(JSON.stringify({ type: 'start_call', cpf: CPF, session_id: sessionId }));
+                    const sessionID = 'web-' + Date.now();
+                    ws.send(JSON.stringify({ type: 'start_call', cpf: CPF, session_id: sessionID }));
+                    await new Promise(resolve => setTimeout(resolve, 2000));
 
-                    startAudioCapture();
+                    await initializeAudio();
                     setVoiceState('active');
                 };
 
                 ws.onmessage = (event) => {
-                    // Audio
-                    if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
-                        if (event.data instanceof Blob) {
-                            event.data.arrayBuffer().then(playAudio);
-                        } else {
-                            playAudio(event.data);
-                        }
+                    if (typeof event.data === 'string') {
+                        try {
+                            const msg = JSON.parse(event.data);
+                            if (msg.text) addMessage(msg.role || 'assistant', msg.text);
+                            if (msg.transcript && msg.role === 'user') addMessage('user', msg.transcript);
+                        } catch (e) { }
                         return;
                     }
 
-                    // Transcriptions / JSON
-                    try {
-                        const msg = JSON.parse(event.data);
-                        // console.log("WS Msg:", msg);
-
-                        if (msg.type === 'response.audio_transcript.delta' || msg.type === 'transcription') {
-                            // Handle streaming transcripts if needed, simplifying for now
-                        }
-
-                        // Try to catch text content (Adjust based on actual EVA-Mind protocol)
-                        // Assuming some form of 'text' or 'transcript' event exists
-                        if (msg.text) {
-                            addMessage(msg.role || 'assistant', msg.text);
-                        }
-                        if (msg.transcript && msg.role === 'user') {
-                            addMessage('user', msg.transcript);
-                        }
-
-                    } catch (e) { }
+                    if (event.data instanceof Blob) {
+                        event.data.arrayBuffer().then(buffer => playAudio(buffer));
+                    }
                 };
 
-                ws.onerror = (e) => {
-                    console.error(e);
+                ws.onerror = () => {
                     stopEVA();
                     alert("Erro de conexão com voz.");
                 };
@@ -669,7 +558,6 @@
 
         function stopEVA() {
             setVoiceState('idle');
-
             if (ws) {
                 ws.send(JSON.stringify({ type: 'hangup' }));
                 ws.close();
@@ -683,9 +571,27 @@
                 audioContext.close();
                 audioContext = null;
             }
+            if (scriptProcessor) {
+                scriptProcessor.disconnect();
+                scriptProcessor = null;
+            }
+            if (playbackContext) {
+                playbackContext.close();
+                playbackContext = null;
+            }
         }
 
-        function startAudioCapture() {
+        async function initializeAudio() {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: TARGET_SAMPLE_RATE,
+                    channelCount: 1
+                }
+            });
+
             audioContext = new AudioContext({ sampleRate: TARGET_SAMPLE_RATE });
             const source = audioContext.createMediaStreamSource(mediaStream);
             const bufferSize = 4096;
