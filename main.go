@@ -343,6 +343,24 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso. No
 		}
 	}
 
+	// 4. GPT-4 (OpenAI)
+	if model == "gpt4" {
+		openaiKey := os.Getenv("OPENAI_API_KEY")
+		if openaiKey == "" {
+			return "", fmt.Errorf("OpenAI API Key não configurada")
+		}
+		return callOpenAI(prompt, openaiKey)
+	}
+
+	// 5. Claude (Anthropic)
+	if model == "claude" {
+		anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
+		if anthropicKey == "" {
+			return "", fmt.Errorf("Anthropic API Key não configurada")
+		}
+		return callClaude(prompt, anthropicKey)
+	}
+
 	return "", fmt.Errorf("nenhum modelo disponível para '%s'", model)
 }
 

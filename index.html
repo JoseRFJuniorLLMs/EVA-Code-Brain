@@ -279,31 +279,37 @@
         .model-selector {
             display: flex;
             justify-content: center;
+            align-items: center;
             gap: 10px;
             margin-bottom: 10px;
             padding: 0 20px;
         }
 
-        .model-btn {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 179, 217, 0.3);
+        .model-select {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 179, 217, 0.4);
             color: #ffb3d9;
-            padding: 6px 12px;
+            padding: 8px 16px;
             border-radius: 15px;
             cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
+            font-size: 13px;
             font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
         }
 
-        .model-btn:hover {
+        .model-select:hover {
             background: rgba(255, 179, 217, 0.1);
+            border-color: #ffb3d9;
         }
 
-        .model-btn.active {
-            background: rgba(255, 179, 217, 0.2);
-            border-color: #ffb3d9;
-            box-shadow: 0 0 10px rgba(255, 179, 217, 0.2);
+        .model-select:focus {
+            box-shadow: 0 0 10px rgba(255, 179, 217, 0.3);
+        }
+
+        .model-select option {
+            background: #1a1a2e;
+            color: #ffb3d9;
         }
 
         .file-tag {
@@ -344,10 +350,15 @@
         </div>
 
         <div class="model-selector">
-            <button class="model-btn active" onclick="setModel('auto')">Auto</button>
-            <button class="model-btn" onclick="setModel('grok')">Grok</button>
-            <button class="model-btn" onclick="setModel('ollama')">Ollama</button>
-            <button class="model-btn" onclick="setModel('gemini')">Gemini</button>
+            <label for="modelSelect" style="color: #ffb3d9; margin-right: 8px; font-size: 13px;">🤖 Modelo:</label>
+            <select id="modelSelect" class="model-select" onchange="setModel(this.value)">
+                <option value="auto">Auto (Prioridade)</option>
+                <option value="grok">Grok (xAI)</option>
+                <option value="ollama">Ollama (Local)</option>
+                <option value="gemini">Gemini (Google)</option>
+                <option value="gpt4">GPT-4 (OpenAI)</option>
+                <option value="claude">Claude (Anthropic)</option>
+            </select>
         </div>
 
         <div class="input-area">
@@ -398,12 +409,6 @@
 
         function setModel(model) {
             currentModel = model;
-            document.querySelectorAll('.model-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.toLowerCase() === model || (model === 'auto' && btn.textContent === 'Auto')) {
-                    btn.classList.add('active');
-                }
-            });
             console.log("Modelo alterado para:", model);
         }
 
