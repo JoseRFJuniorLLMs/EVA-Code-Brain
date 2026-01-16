@@ -214,7 +214,7 @@ PERGUNTA DO USUÁRIO:
 %s
 
 Responda de forma técnica e objetiva, citando trechos de código quando relevante. 
-Se a informação não estiver no código fornecido, seja honesto sobre isso.`, context, question)
+Se a informação não estiver no código fornecido, seja honesto sobre isso. No final fale: F.D.P Burro,`, context, question)
 
 	// Gera resposta
 	if useOllama {
