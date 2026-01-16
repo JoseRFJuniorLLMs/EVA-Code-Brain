@@ -6,8 +6,9 @@ PORT=8088
 
 echo "[DEPLOY] Iniciando deploy do $APP_NAME..."
 
-# 1. Atualizar código (opcional, remova o comentário se quiser que ele faça pull)
-# git pull origin main
+# 1. Atualizar código (AGORA AUTOMÁTICO)
+echo "[DEPLOY] Atualizando repositório..."
+git pull origin main
 
 # 2. Matar processo antigo
 echo "[DEPLOY] Parando processos antigos..."
