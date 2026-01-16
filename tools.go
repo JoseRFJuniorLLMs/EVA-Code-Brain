@@ -210,7 +210,83 @@ func initTools() {
 		Execute: executeCallAPI,
 	})
 
-	// Tool 7: analyze_project
+	// Tool 7: git_blame
+	toolRegistry.Register(&Tool{
+		Name:        "git_blame",
+		Description: "Mostra quem modificou cada linha de um arquivo e quando. Útil para entender histórico de mudanças.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"file_path": map[string]interface{}{
+					"type":        "string",
+					"description": "Caminho do arquivo (ex: 'main.go', 'lib/services/health_service.dart')",
+				},
+				"start_line": map[string]interface{}{
+					"type":        "integer",
+					"description": "Linha inicial (padrão: 1)",
+					"default":     1,
+				},
+				"end_line": map[string]interface{}{
+					"type":        "integer",
+					"description": "Linha final (padrão: 50)",
+					"default":     50,
+				},
+			},
+			"required": []string{"file_path"},
+		},
+		Execute: executeGitBlame,
+	})
+
+	// Tool 8: git_log
+	toolRegistry.Register(&Tool{
+		Name:        "git_log",
+		Description: "Mostra histórico de commits de um arquivo. Útil para ver quando e por que algo foi modificado.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"file_path": map[string]interface{}{
+					"type":        "string",
+					"description": "Caminho do arquivo (ex: 'indexer.go')",
+				},
+				"limit": map[string]interface{}{
+					"type":        "integer",
+					"description": "Número de commits (padrão: 10)",
+					"default":     10,
+				},
+			},
+			"required": []string{"file_path"},
+		},
+		Execute: executeGitLog,
+	})
+
+	// Tool 9: git_diff
+	toolRegistry.Register(&Tool{
+		Name:        "git_diff",
+		Description: "Compara versões de um arquivo entre branches ou commits. Útil para ver o que mudou.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"file_path": map[string]interface{}{
+					"type":        "string",
+					"description": "Caminho do arquivo",
+				},
+				"ref1": map[string]interface{}{
+					"type":        "string",
+					"description": "Branch/commit de origem (ex: 'main', 'HEAD~1')",
+					"default":     "HEAD~1",
+				},
+				"ref2": map[string]interface{}{
+					"type":        "string",
+					"description": "Branch/commit de destino (ex: 'develop', 'HEAD')",
+					"default":     "HEAD",
+				},
+			},
+			"required": []string{"file_path"},
+		},
+		Execute: executeGitDiff,
+	})
+
+	// Tool 10: analyze_project
 	toolRegistry.Register(&Tool{
 		Name:        "analyze_project",
 		Description: "Retorna estatísticas sobre o projeto (total de arquivos, linguagens, tamanho).",

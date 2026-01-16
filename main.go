@@ -120,6 +120,11 @@ func init() {
 	initTools()
 	log.Printf("🔧 %d ferramentas registradas", len(toolRegistry.List()))
 
+	// Inicializa Git service
+	ctx := context.Background()
+	initGitService(ctx)
+	log.Println("📦 Git service inicializado")
+
 	// Inicializa Gemini
 	useOllama, _ = strconv.ParseBool(os.Getenv("USE_OLLAMA"))
 	useGrok, _ = strconv.ParseBool(os.Getenv("USE_GROK"))
