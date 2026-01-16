@@ -214,11 +214,23 @@ func callGrok(prompt string) (string, error) {
 }
 
 func getEmbedding(ctx context.Context, text string) ([]float32, error) {
-	if useOllama {
-		// Usa Ollama Embeddings (Cliente Dedicado)
+	// Prioridade: Gemini (sempre disponível) > Ollama (opcional)
+
+	// 1. Tenta Gemini primeiro (se disponível)
+	if geminiClient != nil {
+		em := geminiClient.EmbeddingModel("text-embedding-004")
+		res, err := em.EmbedContent(ctx, genai.Text(text))
+		if err == nil && res != nil && res.Embedding != nil {
+			return res.Embedding.Values, nil
+		}
+		log.Printf("⚠️  Gemini embedding falhou: %v", err)
+	}
+
+	// 2. Fallback para Ollama (se ativado)
+	if useOllama && ollamaEmbedClient != nil {
 		embeddings, err := ollamaEmbedClient.CreateEmbedding(ctx, []string{text})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Ollama embedding falhou: %w", err)
 		}
 		if len(embeddings) == 0 || len(embeddings[0]) == 0 {
 			return nil, fmt.Errorf("embedding vazio do Ollama")
@@ -226,16 +238,7 @@ func getEmbedding(ctx context.Context, text string) ([]float32, error) {
 		return embeddings[0], nil
 	}
 
-	// Usa Google Embeddings
-	em := geminiClient.EmbeddingModel("text-embedding-004")
-	res, err := em.EmbedContent(ctx, genai.Text(text))
-	if err != nil {
-		return nil, err
-	}
-	if res == nil || res.Embedding == nil {
-		return nil, fmt.Errorf("embedding vazio")
-	}
-	return res.Embedding.Values, nil
+	return nil, fmt.Errorf("nenhum serviço de embedding disponível (Gemini e Ollama falharam ou desativados)")
 }
 
 func searchCodebase(ctx context.Context, query string, limit int) ([]SearchResult, error) {
