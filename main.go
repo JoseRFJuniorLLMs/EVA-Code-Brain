@@ -295,7 +295,7 @@ PERGUNTA DO USUÁRIO:
 %s
 
 Responda de forma técnica e objetiva, citando trechos de código quando relevante. 
-Se a informação não estiver no código fornecido, seja honesto sobre isso. No final fale: F.D.P Burro,`, context, question)
+Se a informação não estiver no código fornecido, seja honesto sobre isso.`, context, question)
 
 	// Seleção de Modelo
 	log.Printf("🤖 Gerando resposta com modelo: %s", model)

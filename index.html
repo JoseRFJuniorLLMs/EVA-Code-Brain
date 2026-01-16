@@ -436,7 +436,11 @@
 
             messageDiv.innerHTML = html;
             messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Auto-scroll to show new message
+            setTimeout(() => {
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
         }
 
         async function askQuestion() {
