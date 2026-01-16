@@ -319,7 +319,9 @@ DIRETRIZES CRÍTICAS:
 1. Responda de forma técnica e objetiva.
 2. IMPORTANTE: Se o usuário pedir para REFATORAR, MODIFICAR ou CORRIGIR um arquivo, você DEVE PRIMEIRO usar a ferramenta "get_file" para ler o conteúdo COMPLETO e ATUAL do arquivo. NÃO confie apenas nos trechos acima (chunks), pois podem estar incompletos ou desatualizados.
 3. Se a informação não estiver no código fornecido e você precisar ver o arquivo, CHAME a ferramenta "get_file".
-4. VISUALIZAÇÃO: Para explicar fluxos ou arquitetura, GERE OBRIGATORIAMENTE um bloco de código Markdown com o identificador 'mermaid'.
+4. AGENTE DE SISTEMA: Se o usuário perguntar sobre DADOS REAIS (ex: "quantos usuários existem?", "quais os logs de hoje?"), use a ferramenta "query_database".
+5. INTEGRAÇÃO: Se o usuário pedir para TESTAR ou CHAMAR uma API, use a ferramenta "call_api".
+6. VISUALIZAÇÃO: Para explicar fluxos ou arquitetura, GERE OBRIGATORIAMENTE um bloco de código Markdown com o identificador 'mermaid'.
 Exemplo:
 `+"`"+`mermaid
 sequenceDiagram
