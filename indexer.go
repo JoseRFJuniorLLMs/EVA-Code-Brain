@@ -224,9 +224,13 @@ func runIndexer(rootDir string) {
 		fmt.Printf("✅ Config: Chat=%s, Embed=%s\n", os.Getenv("OLLAMA_MODEL"), embedModel)
 	} else {
 		// Inicializa Gemini Client para o Indexador
-		apiKey := os.Getenv("GEMINI_API_KEY")
+		apiKey := os.Getenv("GOOGLE_API_KEY")
 		if apiKey == "" {
-			log.Fatal("Erro: GEMINI_API_KEY não configurada no .env")
+			apiKey = os.Getenv("GEMINI_API_KEY")
+		}
+
+		if apiKey == "" {
+			log.Fatal("Erro: GOOGLE_API_KEY ou GEMINI_API_KEY não configurada no .env")
 		}
 		client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 		if err != nil {
