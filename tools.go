@@ -296,6 +296,113 @@ func initTools() {
 		},
 		Execute: executeAnalyzeProject,
 	})
+
+	// Tool 11: analyze_health_trend
+	toolRegistry.Register(&Tool{
+		Name:        "analyze_health_trend",
+		Description: "Analisa tendências de dados de saúde (batimentos, SpO2, passos, sono) com estatísticas e detecção de anomalias.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"idoso_id": map[string]interface{}{
+					"type":        "integer",
+					"description": "ID do idoso",
+				},
+				"metric": map[string]interface{}{
+					"type":        "string",
+					"description": "Métrica a analisar: 'bpm', 'spo2', 'passos', 'sono'",
+				},
+				"days": map[string]interface{}{
+					"type":        "integer",
+					"description": "Número de dias para análise (padrão: 30)",
+					"default":     30,
+				},
+			},
+			"required": []string{"idoso_id", "metric"},
+		},
+		Execute: executeAnalyzeHealthTrend,
+	})
+
+	// Tool 12: assess_health_risk
+	toolRegistry.Register(&Tool{
+		Name:        "assess_health_risk",
+		Description: "Avalia risco geral de saúde baseado em múltiplas métricas e fornece recomendações.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"idoso_id": map[string]interface{}{
+					"type":        "integer",
+					"description": "ID do idoso",
+				},
+				"days": map[string]interface{}{
+					"type":        "integer",
+					"description": "Período de análise em dias (padrão: 30)",
+					"default":     30,
+				},
+			},
+			"required": []string{"idoso_id"},
+		},
+		Execute: executeAssessHealthRisk,
+	})
+
+	// Tool 13: generate_tests
+	toolRegistry.Register(&Tool{
+		Name:        "generate_tests",
+		Description: "Gera testes unitários automaticamente para uma função ou arquivo completo.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"file_path": map[string]interface{}{
+					"type":        "string",
+					"description": "Caminho do arquivo",
+				},
+				"function_name": map[string]interface{}{
+					"type":        "string",
+					"description": "Nome da função (opcional, se vazio gera para o arquivo inteiro)",
+				},
+			},
+			"required": []string{"file_path"},
+		},
+		Execute: executeGenerateTests,
+	})
+
+	// Tool 14: generate_mocks
+	toolRegistry.Register(&Tool{
+		Name:        "generate_mocks",
+		Description: "Gera mocks para interfaces/classes para uso em testes.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"interface_name": map[string]interface{}{
+					"type":        "string",
+					"description": "Nome da interface/classe para mockar",
+				},
+				"language": map[string]interface{}{
+					"type":        "string",
+					"description": "Linguagem: 'go', 'python', 'typescript', 'dart'",
+				},
+			},
+			"required": []string{"interface_name", "language"},
+		},
+		Execute: executeGenerateMocks,
+	})
+
+	// Tool 15: analyze_code_quality
+	toolRegistry.Register(&Tool{
+		Name:        "analyze_code_quality",
+		Description: "Analisa qualidade do código com linters, métricas de complexidade e detecção de code smells.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"file_path": map[string]interface{}{
+					"type":        "string",
+					"description": "Caminho do arquivo para analisar",
+				},
+			},
+			"required": []string{"file_path"},
+		},
+		Execute: executeAnalyzeCodeQuality,
+	})
 }
 
 // ============================================

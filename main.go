@@ -71,6 +71,9 @@ var (
 	useGrok    bool
 	grokApiKey string
 	grokModel  string = "grok-4-latest"
+	// Multi-Agent
+	useMultiAgent bool
+	masterAgent   *MasterAgent
 )
 
 type GrokRequest struct {
@@ -124,6 +127,25 @@ func init() {
 	ctx := context.Background()
 	initGitService(ctx)
 	log.Println("📦 Git service inicializado")
+
+	// Inicializa Health Analytics
+	initHealthAnalytics()
+	log.Println("🏥 Health Analytics inicializado")
+
+	// Inicializa Multi-Agent System
+	useMultiAgent, _ = strconv.ParseBool(os.Getenv("USE_MULTI_AGENT"))
+	if useMultiAgent {
+		masterAgent = NewMasterAgent()
+		log.Println("🤖 Multi-Agent System ativado")
+	}
+
+	// Inicializa Test Generation
+	initTestGeneration()
+	log.Println("🧪 Test Generation inicializado")
+
+	// Inicializa Code Quality
+	initCodeQuality()
+	log.Println("📊 Code Quality Analysis inicializado")
 
 	// Inicializa Gemini
 	useOllama, _ = strconv.ParseBool(os.Getenv("USE_OLLAMA"))
@@ -515,15 +537,28 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Busca código relevante
-	searchResults, err := searchHybrid(r.Context(), req.Question, 5) // Use Hybrid Search!
+	searchResults, err := searchHybrid(r.Context(), req.Question, 5)
 	if err != nil {
 		log.Println("Erro na busca:", err)
 		respondWithError(w, http.StatusInternalServerError, "Erro ao buscar código: "+err.Error())
 		return
 	}
 
-	// Gera resposta
-	answer, err := generateAnswer(r.Context(), req.Question, req.Model, searchResults, history)
+	// Gera resposta (Multi-Agent ou Standard)
+	var answer string
+	if useMultiAgent && masterAgent != nil {
+		// Multi-Agent System
+		answer, err = masterAgent.ExecuteMultiAgent(r.Context(), req.Question, searchResults, history)
+		if err != nil {
+			log.Printf("⚠️  Multi-Agent failed, falling back to standard: %v", err)
+			// Fallback to standard generation
+			answer, err = generateAnswer(r.Context(), req.Question, req.Model, searchResults, history)
+		}
+	} else {
+		// Standard generation
+		answer, err = generateAnswer(r.Context(), req.Question, req.Model, searchResults, history)
+	}
+
 	if err != nil {
 		log.Println("Erro ao gerar resposta:", err)
 		respondWithError(w, http.StatusInternalServerError, "Erro ao gerar resposta: "+err.Error())
