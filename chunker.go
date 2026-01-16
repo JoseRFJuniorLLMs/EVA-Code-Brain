@@ -253,6 +253,11 @@ func (sc *SemanticChunker) chunkSQL(content string) ([]Chunk, error) {
 			chunkType = "alter"
 		}
 
+		// Hard Safety Limit for Context Window (approx 6000 chars)
+		if len(trimmed) > 6000 {
+			trimmed = trimmed[:6000] + "\n-- [TRUNCATED DUE TO SIZE LIMIT] --;"
+		}
+
 		chunks = append(chunks, Chunk{
 			Type:      chunkType,
 			Name:      name,

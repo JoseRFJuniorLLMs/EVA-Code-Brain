@@ -169,7 +169,20 @@ func processFile(ctx context.Context, path string, rootDir string, projectName s
 		_, err = db.ExecContext(ctx, `
 			INSERT INTO project_codebase 
 			(file_path, chunk_index, content, embedding, last_modified_hash, file_size, language, chunk_type, symbol_name, start_line, end_line, context_info, project_name)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			ON CONFLICT (file_path, chunk_index, project_name) 
+			DO UPDATE SET 
+				content = EXCLUDED.content,
+				embedding = EXCLUDED.embedding,
+				last_modified_hash = EXCLUDED.last_modified_hash,
+				file_size = EXCLUDED.file_size,
+				language = EXCLUDED.language,
+				chunk_type = EXCLUDED.chunk_type,
+				symbol_name = EXCLUDED.symbol_name,
+				start_line = EXCLUDED.start_line,
+				end_line = EXCLUDED.end_line,
+				context_info = EXCLUDED.context_info,
+				updated_at = NOW()`,
 			relPath, i, chunk.Content, pgvector.NewVector(embedding), fileHash, fileSize, ext,
 			chunk.Type, chunk.Name, chunk.StartLine, chunk.EndLine, chunk.Context, projectName,
 		)
