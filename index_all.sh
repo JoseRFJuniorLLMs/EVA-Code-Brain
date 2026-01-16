@@ -4,26 +4,24 @@
 
 echo "🧠 Iniciando indexação de projetos EVA..."
 
-# Lista de projetos para indexar
-PROJECTS=(
-    "/root/EVA-Mind"
-    "/root/EVA-back"
-    "/root/EVA-Mobile"
-    "/root/EVA-Familia"
-    "/root/EVA-Markov"
-    "/root/EVA-Code-Brain"
-)
+# Diretório base
+EVA_DIR="/root/EVA"
 
-# Para cada projeto
-for PROJECT in "${PROJECTS[@]}"; do
+# Verifica se o diretório existe
+if [ ! -d "$EVA_DIR" ]; then
+    echo "❌ Diretório $EVA_DIR não encontrado!"
+    exit 1
+fi
+
+# Para cada subdiretório em /root/EVA/
+for PROJECT in "$EVA_DIR"/*/ ; do
     if [ -d "$PROJECT" ]; then
+        PROJECT_NAME=$(basename "$PROJECT")
         echo ""
-        echo "📂 Indexando: $PROJECT"
+        echo "📂 Indexando: $PROJECT_NAME"
         cd /root/EVA-Code-Brain
         ./eva-code-brain -index "$PROJECT"
-        echo "✅ $PROJECT indexado!"
-    else
-        echo "⚠️  Projeto não encontrado: $PROJECT"
+        echo "✅ $PROJECT_NAME indexado!"
     fi
 done
 
