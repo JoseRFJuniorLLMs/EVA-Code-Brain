@@ -662,8 +662,8 @@ func executeDatabaseQuery(ctx context.Context, params map[string]interface{}) (s
 
 	count := 0
 	for rows.Next() {
-		if count >= 20 { // Limite de visualização para não travar
-			output += "\n... (mais resultados omitidos)"
+		if count >= 100 { // Limite aumentado para 100
+			output += "\n... (mais resultados omitidos para segurança)"
 			break
 		}
 
