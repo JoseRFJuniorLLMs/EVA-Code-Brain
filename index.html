@@ -5,6 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVA Code Brain</title>
+
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+
+    <!-- Marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <style>
         :root {
             --bg-primary: #0f0f1e;
@@ -132,6 +144,71 @@
             border-radius: 4px;
             margin-right: 5px;
             margin-top: 5px;
+        }
+
+        /* Code blocks */
+        .message-content pre {
+            position: relative;
+            background: #1e1e1e !important;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .message-content code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .message-content pre code {
+            background: none !important;
+            padding: 0 !important;
+        }
+
+        .message-content :not(pre)>code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* Copy button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .copy-btn.copied {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        /* Source files section */
+        .source-files {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .source-files-title {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: bold;
         }
 
         .model-selector {
@@ -421,21 +498,56 @@
 
             const avatar = role === 'user' ? '<img src="jumento.png" style="width: 32px; height: 32px; border-radius: 50%;">' : '<img src="eva.png" style="width: 32px; height: 32px; border-radius: 50%;">';
 
+            // Parse markdown if available
+            let processedContent = content;
+            if (typeof marked !== 'undefined' && role === 'assistant') {
+                processedContent = marked.parse(content);
+            } else {
+                // Fallback: convert line breaks
+                processedContent = content.replace(/\n/g, '<br>');
+            }
+
             let html = `
                 <div class="message-avatar">${avatar}</div>
-                <div class="message-content">${content}
-            `;
+                <div class="message-content">${processedContent}`;
 
             if (sourceFiles && sourceFiles.length > 0) {
-                html += `<div style="margin-top:10px; pt-2; border-top:1px solid rgba(255,255,255,0.1)">
-                    <div style="font-size:10px; color:#aaa; margin-bottom:5px">ARQUIVOS:</div>
-                    ${sourceFiles.map(f => `<span class="file-tag">${f}</span>`).join('')}
-                </div>`;
+                html += `
+                    <div class="source-files">
+                        <div class="source-files-title">📁 ARQUIVOS CONSULTADOS:</div>
+                        ${sourceFiles.map(f => `<span class="file-tag">${f}</span>`).join('')}
+                    </div>`;
             }
             html += `</div>`;
 
             messageDiv.innerHTML = html;
             messagesDiv.appendChild(messageDiv);
+
+            // Apply syntax highlighting to code blocks
+            if (typeof hljs !== 'undefined') {
+                messageDiv.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+
+                    // Add copy button
+                    const pre = block.parentElement;
+                    if (pre && !pre.querySelector('.copy-btn')) {
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'copy-btn';
+                        copyBtn.textContent = 'Copy';
+                        copyBtn.onclick = () => {
+                            navigator.clipboard.writeText(block.textContent).then(() => {
+                                copyBtn.textContent = '✓ Copied!';
+                                copyBtn.classList.add('copied');
+                                setTimeout(() => {
+                                    copyBtn.textContent = 'Copy';
+                                    copyBtn.classList.remove('copied');
+                                }, 2000);
+                            });
+                        };
+                        pre.appendChild(copyBtn);
+                    }
+                });
+            }
 
             // Auto-scroll to show new message
             setTimeout(() => {
