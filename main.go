@@ -300,7 +300,33 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso. No
 	// Seleção de Modelo
 	log.Printf("🤖 Gerando resposta com modelo: %s", model)
 
-	// 1. Grok
+	// 1. GPT-4 (OpenAI) - Específico
+	if model == "gpt4" {
+		useGPT4, _ := strconv.ParseBool(os.Getenv("USE_GPT4"))
+		if !useGPT4 {
+			return "", fmt.Errorf("GPT-4 não está ativado no .env (USE_GPT4=false)")
+		}
+		openaiKey := os.Getenv("OPENAI_API_KEY")
+		if openaiKey == "" {
+			return "", fmt.Errorf("OpenAI API Key não configurada")
+		}
+		return callOpenAI(prompt, openaiKey)
+	}
+
+	// 2. Claude (Anthropic) - Específico
+	if model == "claude" {
+		useClaude, _ := strconv.ParseBool(os.Getenv("USE_CLAUDE"))
+		if !useClaude {
+			return "", fmt.Errorf("Claude não está ativado no .env (USE_CLAUDE=false)")
+		}
+		anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
+		if anthropicKey == "" {
+			return "", fmt.Errorf("Anthropic API Key não configurada")
+		}
+		return callClaude(prompt, anthropicKey)
+	}
+
+	// 3. Grok - Específico ou Auto
 	if model == "grok" || (model == "auto" && useGrok) || (model == "" && useGrok) {
 		if useGrok {
 			return callGrok(prompt)
@@ -310,7 +336,7 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso. No
 		}
 	}
 
-	// 2. Ollama
+	// 4. Ollama - Específico ou Auto
 	if model == "ollama" || (model == "auto" && useOllama) || (model == "" && useOllama) {
 		if useOllama {
 			return ollamaClient.Call(ctx, prompt)
@@ -320,7 +346,7 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso. No
 		}
 	}
 
-	// 3. Gemini
+	// 5. Gemini - Específico ou Auto
 	if model == "gemini" || (model == "auto" && geminiModel != nil) || (model == "" && geminiModel != nil) {
 		if geminiModel != nil {
 			resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
@@ -341,32 +367,6 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso. No
 		if model == "gemini" {
 			return "", fmt.Errorf("Gemini não está configurado")
 		}
-	}
-
-	// 4. GPT-4 (OpenAI)
-	if model == "gpt4" {
-		useGPT4, _ := strconv.ParseBool(os.Getenv("USE_GPT4"))
-		if !useGPT4 {
-			return "", fmt.Errorf("GPT-4 não está ativado no .env (USE_GPT4=false)")
-		}
-		openaiKey := os.Getenv("OPENAI_API_KEY")
-		if openaiKey == "" {
-			return "", fmt.Errorf("OpenAI API Key não configurada")
-		}
-		return callOpenAI(prompt, openaiKey)
-	}
-
-	// 5. Claude (Anthropic)
-	if model == "claude" {
-		useClaude, _ := strconv.ParseBool(os.Getenv("USE_CLAUDE"))
-		if !useClaude {
-			return "", fmt.Errorf("Claude não está ativado no .env (USE_CLAUDE=false)")
-		}
-		anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
-		if anthropicKey == "" {
-			return "", fmt.Errorf("Anthropic API Key não configurada")
-		}
-		return callClaude(prompt, anthropicKey)
 	}
 
 	return "", fmt.Errorf("nenhum modelo disponível para '%s'", model)
