@@ -613,7 +613,30 @@
             if (player) toggleZen();
         }
 
+        function speak(text) {
+            if (!window.speechSynthesis) return;
+
+            // Cancela falas anteriores
+            window.speechSynthesis.cancel();
+
+            // Limpeza de Markdown/Mermaid para a voz
+            const cleanText = text
+                .replace(/```mermaid[\s\S]*?```/g, ' [Diagrama exibido na tela] ')
+                .replace(/```[\s\S]*?```/g, ' [Código omitido da fala] ')
+                .replace(/[#*`_]/g, '')
+                .trim();
+
+            if (!cleanText) return;
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 1.1;
+            window.speechSynthesis.speak(utterance);
+        }
+
         function addMessage(role, content, sourceFiles = []) {
+            if (role === 'assistant') speak(content);
+
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
