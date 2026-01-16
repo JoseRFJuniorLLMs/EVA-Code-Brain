@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/google/generative-ai-go/genai"
 	"github.com/joho/godotenv"
@@ -108,8 +109,8 @@ func init() {
 	log.Println("✅ Conectado ao PostgreSQL")
 
 	// Configuração de AI
-	useOllama = os.Getenv("USE_OLLAMA") == "true"
-	useGrok = os.Getenv("USE_GROK") == "true"
+	useOllama, _ = strconv.ParseBool(os.Getenv("USE_OLLAMA"))
+	useGrok, _ = strconv.ParseBool(os.Getenv("USE_GROK"))
 	grokApiKey = os.Getenv("GROK_API_KEY")
 
 	if useGrok {
@@ -298,23 +299,15 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso. No
 	// Gera resposta
 	// 1. Tenta Grok (se ativado)
 	if useGrok {
-		answer, err := callGrok(prompt)
-		if err == nil {
-			return answer, nil
-		}
-		log.Printf("⚠️ Erro no Grok (tentando fallback): %v", err)
+		return callGrok(prompt) // Retorna erro direto se falhar (429, etc)
 	}
 
 	// 2. Tenta Ollama (se ativado)
 	if useOllama {
-		resp, err := ollamaClient.Call(ctx, prompt)
-		if err == nil {
-			return resp, nil
-		}
-		log.Printf("⚠️ Erro no Ollama (tentando fallback): %v", err)
+		return ollamaClient.Call(ctx, prompt)
 	}
 
-	// 3. Tenta Gemini (último recurso)
+	// 3. Fallback Gemini (Apenas se Grok e Ollama estiverem DESATIVADOS)
 	if geminiModel != nil {
 		resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
 		if err != nil {
@@ -335,7 +328,7 @@ Se a informação não estiver no código fornecido, seja honesto sobre isso. No
 		return answer, nil
 	}
 
-	return "", fmt.Errorf("nenhum modelo de IA disponível ou todos falharam")
+	return "", fmt.Errorf("nenhum modelo de IA disponível")
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
