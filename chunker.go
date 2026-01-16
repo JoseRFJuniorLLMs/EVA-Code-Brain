@@ -27,10 +27,16 @@ func NewSemanticChunker() *SemanticChunker {
 
 // Chunk splits content based on file extension
 func (sc *SemanticChunker) Chunk(filePath string, content string) ([]Chunk, error) {
-	if strings.HasSuffix(filePath, ".go") {
+	ext := strings.ToLower(filePath)
+	if strings.HasSuffix(ext, ".go") {
 		return sc.chunkGo(content)
 	}
-	// TODO: Add Python, JS, SQL parsers
+	if strings.HasSuffix(ext, ".py") {
+		return sc.chunkPython(content)
+	}
+	if strings.HasSuffix(ext, ".sql") {
+		return sc.chunkSQL(content)
+	}
 	return sc.chunkGeneric(content)
 }
 
@@ -66,9 +72,16 @@ func (sc *SemanticChunker) chunkGo(content string) ([]Chunk, error) {
 
 			name := d.Name.Name
 			chunkType := "function"
-			if d.Recv != nil {
+			if d.Recv != nil && len(d.Recv.List) > 0 {
 				chunkType = "method"
-				// Add receiver info to name if desired, e.g. "Receiver.Method"
+				// Capture receiver name
+				if t, ok := d.Recv.List[0].Type.(*ast.StarExpr); ok {
+					if id, ok := t.X.(*ast.Ident); ok {
+						name = id.Name + "." + name
+					}
+				} else if id, ok := d.Recv.List[0].Type.(*ast.Ident); ok {
+					name = id.Name + "." + name
+				}
 			}
 
 			chunks = append(chunks, Chunk{
@@ -109,6 +122,137 @@ func (sc *SemanticChunker) chunkGo(content string) ([]Chunk, error) {
 		return sc.chunkGeneric(content)
 	}
 
+	return chunks, nil
+}
+
+// chunkPython extracts classes and functions using indentation/regex
+func (sc *SemanticChunker) chunkPython(content string) ([]Chunk, error) {
+	lines := strings.Split(content, "\n")
+	var chunks []Chunk
+
+	var currentName string
+	var currentType string
+	var startLine int
+	var chunkLines []string
+	indentBase := -1
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			if len(chunkLines) > 0 {
+				chunkLines = append(chunkLines, line)
+			}
+			continue
+		}
+
+		// Detect Start (Class or Def)
+		isStart := false
+		if strings.HasPrefix(trimmed, "def ") || strings.HasPrefix(trimmed, "class ") {
+			// Check indentation
+			currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
+
+			// If we were already in a chunk, decide if we should finish it
+			// Higher level or equal level indent usually means new block
+			if len(chunkLines) > 0 && currentIndent <= indentBase {
+				chunks = append(chunks, Chunk{
+					Type:      currentType,
+					Name:      currentName,
+					Content:   strings.Join(chunkLines, "\n"),
+					StartLine: startLine,
+					EndLine:   i,
+				})
+				chunkLines = nil
+				indentBase = -1
+			}
+
+			if indentBase == -1 {
+				isStart = true
+				startLine = i + 1
+				indentBase = currentIndent
+				if strings.HasPrefix(trimmed, "def ") {
+					currentType = "function"
+					currentName = strings.TrimPrefix(trimmed, "def ")
+				} else {
+					currentType = "class"
+					currentName = strings.TrimPrefix(trimmed, "class ")
+				}
+				currentName = strings.Split(currentName, "(")[0]
+				currentName = strings.TrimSuffix(currentName, ":")
+			}
+		}
+
+		if indentBase != -1 {
+			chunkLines = append(chunkLines, line)
+		} else {
+			// Top-level code not inside class/func goes to generic later?
+			// For now, let's just use generic for small files or top-level scripts
+		}
+	}
+
+	// Final chunk
+	if len(chunkLines) > 0 {
+		chunks = append(chunks, Chunk{
+			Type:      currentType,
+			Name:      currentName,
+			Content:   strings.Join(chunkLines, "\n"),
+			StartLine: startLine,
+			EndLine:   len(lines),
+		})
+	}
+
+	if len(chunks) == 0 {
+		return sc.chunkGeneric(content)
+	}
+	return chunks, nil
+}
+
+// chunkSQL extracts tables, functions and triggers
+func (sc *SemanticChunker) chunkSQL(content string) ([]Chunk, error) {
+	// Simple SQL splitter by semicolon and common keywords
+	var chunks []Chunk
+	parts := strings.Split(content, ";")
+	lineOffset := 1
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+
+		upper := strings.ToUpper(trimmed)
+		chunkType := "sql_statement"
+		name := "query"
+
+		if strings.Contains(upper, "CREATE TABLE") {
+			chunkType = "table"
+			// Extract name (simple)
+			words := strings.Fields(trimmed)
+			for i, w := range words {
+				if strings.ToUpper(w) == "TABLE" && i+1 < len(words) {
+					name = strings.Trim(words[i+1], "(\"`")
+					break
+				}
+			}
+		} else if strings.Contains(upper, "CREATE FUNCTION") || strings.Contains(upper, "CREATE PROCEDURE") {
+			chunkType = "function"
+		} else if strings.Contains(upper, "CREATE TRIGGER") {
+			chunkType = "trigger"
+		}
+
+		numLines := strings.Count(part, "\n")
+		chunks = append(chunks, Chunk{
+			Type:      chunkType,
+			Name:      name,
+			Content:   trimmed + ";",
+			StartLine: lineOffset,
+			EndLine:   lineOffset + numLines,
+		})
+		lineOffset += numLines + 1
+	}
+
+	if len(chunks) == 0 {
+		return sc.chunkGeneric(content)
+	}
 	return chunks, nil
 }
 
