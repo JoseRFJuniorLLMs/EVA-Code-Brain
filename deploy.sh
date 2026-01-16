@@ -2,11 +2,11 @@
 
 # Configuration
 APP_NAME="eva-code-brain"
-PORT=666
+PORT=8088
 
 echo "[DEPLOY] Iniciando deploy do $APP_NAME..."
 
-# 1. Atualizar código
+# 1. Atualizar código (AGORA AUTOMÁTICO)
 echo "[DEPLOY] Atualizando repositório..."
 git pull origin main
 

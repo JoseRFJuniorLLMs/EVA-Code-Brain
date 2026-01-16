@@ -35,7 +35,7 @@ for PROJECT in "$EVA_DIR"/*/ ; do
         echo ""
         echo "📂 Indexando: $PROJECT_NAME ($PROJECT)"
         cd "$(dirname "$0")"
-        ./eva-code-brain -index "$PROJECT"
+        ./eva-code-brain -index -dir "$PROJECT"
         echo "✅ $PROJECT_NAME indexado!"
     fi
 done
