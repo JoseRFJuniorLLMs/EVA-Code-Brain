@@ -736,7 +736,7 @@
                 }
 
                 const data = await res.json();
-                addMessage('assistant', data.answer.replace(/\n/g, '<br>'), data.source_files);
+                addMessage('assistant', data.answer, data.source_files);
             } catch (e) {
                 addMessage('assistant', `❌ ${e.message}`);
             }
