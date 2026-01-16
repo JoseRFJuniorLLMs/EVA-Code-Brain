@@ -230,6 +230,11 @@
             margin-bottom: 20px;
         }
 
+        .fab.zen-btn {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            margin-bottom: 20px;
+        }
+
         .fab.connecting {
             background: #b3b3b3;
             animation: spin 1s infinite linear;
@@ -318,11 +323,20 @@
 
     <!-- Floating Action Button -->
     <div class="fab-container">
+        <button id="zenBtn" class="fab zen-btn" onclick="toggleZen()">
+            🧘
+        </button>
+        <div class="fab-status">Modo Zen</div>
+
         <button id="voiceBtn" class="fab" onclick="toggleVoice()">
             🎤
         </button>
         <div id="voiceStatus" class="fab-status">Toque para Falar</div>
     </div>
+
+    <audio id="zenAudio" loop>
+        <source src="zen.mp3" type="audio/mpeg">
+    </audio>
 
     <script>
         // ============================================
@@ -341,6 +355,22 @@
         let mediaStream = null;
         let playbackContext = null;
         let isActive = false;
+
+        // ZEN MODE
+        function toggleZen() {
+            const audio = document.getElementById('zenAudio');
+            const btn = document.getElementById('zenBtn');
+
+            if (audio.paused) {
+                audio.volume = 0.3;
+                audio.play().catch(e => alert("Erro ao tocar áudio: " + e.message));
+                btn.style.opacity = '1';
+                btn.style.boxShadow = '0 0 20px #a855f7';
+            } else {
+                audio.pause();
+                btn.style.boxShadow = 'none';
+            }
+        }
 
         // ============================================
         // UI Helpers
