@@ -292,7 +292,7 @@
 <body>
     <div class="header">
         <div class="logo">
-            <h1>🧠 Code Brain</h1>
+            <h1>🧠 EVA Code Brain</h1>
         </div>
         <div style="font-size: 0.8rem; opacity: 0.6;">v3.0 Lite</div>
     </div>
@@ -356,7 +356,7 @@
         let mediaStream = null;
         let playbackContext = null;
         let isActive = false;
-        
+
         // YouTube Player
         let player;
         let isPlayerReady = false;
@@ -382,7 +382,7 @@
         function onPlayerReady(event) {
             isPlayerReady = true;
             // Opcional: Definir volume inicial
-            event.target.setVolume(50); 
+            event.target.setVolume(50);
         }
 
         // ZEN MODE
@@ -395,9 +395,9 @@
             }
 
             const playerState = player.getPlayerState();
-            
+
             // 1 = Playing, 2 = Paused, 5 = Cued, -1 = Unstarted
-            if (playerState !== 1) { 
+            if (playerState !== 1) {
                 player.playVideo();
                 btn.style.opacity = '1';
                 btn.style.boxShadow = '0 0 20px #a855f7';
