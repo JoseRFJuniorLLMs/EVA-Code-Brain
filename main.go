@@ -123,7 +123,7 @@ func init() {
 			log.Fatal("Erro ao criar cliente Gemini:", err)
 		}
 
-		geminiModel = geminiClient.GenerativeModel("gemini-1.5-pro")
+		geminiModel = geminiClient.GenerativeModel("gemini-1.5-flash")
 		log.Println("✅ Cliente Gemini inicializado")
 	}
 }
