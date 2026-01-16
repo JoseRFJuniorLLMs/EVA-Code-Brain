@@ -102,11 +102,11 @@ func searchVector(ctx context.Context, query string, limit int) ([]SearchResult,
 	for rows.Next() {
 		var r SearchResult
 		// Handle NULLs safely for metadata columns
-		var cType, symName sql.NullString
+		var cType, symName, projName sql.NullString
 		var sLine, eLine sql.NullInt32
 
 		if err := rows.Scan(&r.FilePath, &r.ChunkIndex, &r.Content,
-			&cType, &symName, &sLine, &eLine, &r.ProjectName,
+			&cType, &symName, &sLine, &eLine, &projName,
 			&r.Similarity); err != nil {
 			log.Println("Error scanning vector result:", err)
 			continue
@@ -116,6 +116,7 @@ func searchVector(ctx context.Context, query string, limit int) ([]SearchResult,
 		r.Symbol = symName.String
 		r.StartLine = int(sLine.Int32)
 		r.EndLine = int(eLine.Int32)
+		r.ProjectName = projName.String
 
 		results = append(results, r)
 	}
@@ -147,11 +148,11 @@ func searchKeyword(ctx context.Context, query string, limit int) ([]SearchResult
 		var r SearchResult
 		var rank float64
 		// Handle NULLs
-		var cType, symName sql.NullString
+		var cType, symName, projName sql.NullString
 		var sLine, eLine sql.NullInt32
 
 		if err := rows.Scan(&r.FilePath, &r.ChunkIndex, &r.Content,
-			&cType, &symName, &sLine, &eLine, &r.ProjectName,
+			&cType, &symName, &sLine, &eLine, &projName,
 			&rank); err != nil {
 			log.Println("Error scanning keyword result:", err)
 			continue
@@ -161,6 +162,7 @@ func searchKeyword(ctx context.Context, query string, limit int) ([]SearchResult
 		r.Symbol = symName.String
 		r.StartLine = int(sLine.Int32)
 		r.EndLine = int(eLine.Int32)
+		r.ProjectName = projName.String
 		r.Similarity = rank // Use rank as similarity proxy
 
 		results = append(results, r)
