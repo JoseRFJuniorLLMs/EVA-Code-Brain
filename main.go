@@ -154,7 +154,7 @@ func init() {
 			if err != nil {
 				log.Fatal("Erro ao criar cliente Gemini:", err)
 			}
-			geminiModel = geminiClient.GenerativeModel("gemini-1.5-flash")
+			geminiModel = geminiClient.GenerativeModel("gemini-1.5-flash-latest")
 			log.Println("✅ Cliente Gemini inicializado (Embeddings/Chat)")
 		}
 	}
