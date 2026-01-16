@@ -472,7 +472,13 @@
                         const errJson = JSON.parse(errText);
                         errMsg = errJson.error || errText;
                     } catch (e) { }
-                    throw new Error(`Erro Servidor (${res.status}): ${errMsg}`);
+
+                    // Tratamento específico para 429 (Muitas requisições / Cota)
+                    if (res.status === 429 || errMsg.includes("429") || errMsg.includes("Too Many Requests")) {
+                        throw new Error("⏳ <b>Cota do Grok Excedida!</b><br>Muitas requisições. Tente novamente em alguns minutos ou altere o modelo no .env.");
+                    }
+
+                    throw new Error(`Erro (${res.status}): ${errMsg}`);
                 }
 
                 const data = await res.json();
