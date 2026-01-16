@@ -146,7 +146,6 @@ func (sc *SemanticChunker) chunkPython(content string) ([]Chunk, error) {
 		}
 
 		// Detect Start (Class or Def)
-		isStart := false
 		if strings.HasPrefix(trimmed, "def ") || strings.HasPrefix(trimmed, "class ") {
 			// Check indentation
 			currentIndent := len(line) - len(strings.TrimLeft(line, " \t"))
@@ -166,7 +165,6 @@ func (sc *SemanticChunker) chunkPython(content string) ([]Chunk, error) {
 			}
 
 			if indentBase == -1 {
-				isStart = true
 				startLine = i + 1
 				indentBase = currentIndent
 				if strings.HasPrefix(trimmed, "def ") {
