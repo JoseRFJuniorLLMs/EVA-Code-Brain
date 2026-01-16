@@ -74,6 +74,9 @@ var (
 	// Multi-Agent
 	useMultiAgent bool
 	masterAgent   *MasterAgent
+	// Re-ranking
+	useReranking     bool
+	rerankingService *RerankingService
 )
 
 type GrokRequest struct {
@@ -146,6 +149,13 @@ func init() {
 	// Inicializa Code Quality
 	initCodeQuality()
 	log.Println("📊 Code Quality Analysis inicializado")
+
+	// Inicializa Re-ranking
+	useReranking, _ = strconv.ParseBool(os.Getenv("USE_RERANKING"))
+	rerankingService = NewRerankingService(useReranking)
+	if useReranking {
+		log.Println("🎯 Re-ranking ativado")
+	}
 
 	// Inicializa Gemini
 	useOllama, _ = strconv.ParseBool(os.Getenv("USE_OLLAMA"))
@@ -542,6 +552,17 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		log.Println("Erro na busca:", err)
 		respondWithError(w, http.StatusInternalServerError, "Erro ao buscar código: "+err.Error())
 		return
+	}
+
+	// Re-ranking (se ativado)
+	if useReranking && rerankingService != nil {
+		reranked, err := rerankingService.Rerank(r.Context(), req.Question, searchResults)
+		if err != nil {
+			log.Printf("⚠️  Re-ranking failed, using original results: %v", err)
+		} else {
+			searchResults = reranked
+			log.Printf("🎯 Re-ranking applied to %d results", len(searchResults))
+		}
 	}
 
 	// Gera resposta (Multi-Agent ou Standard)
