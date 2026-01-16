@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -54,11 +55,34 @@ var (
 	geminiClient *genai.Client
 	geminiModel  *genai.GenerativeModel
 	// Ollama
-	// Ollama
 	ollamaClient      *ollama.LLM
 	ollamaEmbedClient *ollama.LLM
 	useOllama         bool
+	// Grok
+	useGrok    bool
+	grokApiKey string
+	grokModel  string = "grok-4-latest"
 )
+
+type GrokRequest struct {
+	Messages    []GrokMessage `json:"messages"`
+	Model       string        `json:"model"`
+	Stream      bool          `json:"stream"`
+	Temperature float64       `json:"temperature"`
+}
+
+type GrokMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type GrokResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
 
 func init() {
 	var err error
@@ -85,6 +109,13 @@ func init() {
 
 	// Configuração de AI
 	useOllama = os.Getenv("USE_OLLAMA") == "true"
+	useGrok = os.Getenv("USE_GROK") == "true"
+	grokApiKey = os.Getenv("GROK_API_KEY")
+
+	if useGrok {
+		log.Println("🚀 Modo GROK ativado (xAI)")
+		// Embeddings continuarão usando Gemini ou Ollama
+	}
 
 	if useOllama {
 		log.Println("🦙 Modo OLLAMA ativado (Local AI)")
@@ -110,27 +141,75 @@ func init() {
 		ollamaEmbedClient = embedLlm
 
 		log.Printf("✅ Ollama Inicializado: Chat=%s, Embed=%s", chatModel, embedModel)
-	} else {
-		// Inicializa Google Gemini
+	}
+
+	// Inicializa Google Gemini (Sempre necessário para embeddings se Ollama estiver off, ou se Grok estiver on)
+	if !useOllama {
 		apiKey := os.Getenv("GOOGLE_API_KEY")
 		if apiKey == "" {
-			log.Fatal("❌ GOOGLE_API_KEY não definida")
+			log.Println("⚠️ GOOGLE_API_KEY não definida (Embeddings podem falhar)")
+		} else {
+			ctx := context.Background()
+			geminiClient, err = genai.NewClient(ctx, option.WithAPIKey(apiKey))
+			if err != nil {
+				log.Fatal("Erro ao criar cliente Gemini:", err)
+			}
+			geminiModel = geminiClient.GenerativeModel("gemini-1.5-flash")
+			log.Println("✅ Cliente Gemini inicializado (Embeddings/Chat)")
 		}
-
-		ctx := context.Background()
-		geminiClient, err = genai.NewClient(ctx, option.WithAPIKey(apiKey))
-		if err != nil {
-			log.Fatal("Erro ao criar cliente Gemini:", err)
-		}
-
-		geminiModel = geminiClient.GenerativeModel("gemini-1.5-flash")
-		log.Println("✅ Cliente Gemini inicializado")
 	}
 }
 
 // ============================================
 // FUNÇÕES CORE
 // ============================================
+
+func callGrok(prompt string) (string, error) {
+	reqBody := GrokRequest{
+		Messages: []GrokMessage{
+			{Role: "system", Content: "You are a helpful coding assistant specialized in Go and web development."},
+			{Role: "user", Content: prompt},
+		},
+		Model:       grokModel,
+		Stream:      false,
+		Temperature: 0.1,
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", "https://api.x.ai/v1/chat/completions", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+grokApiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("erro API Grok: %s", resp.Status)
+	}
+
+	var grokResp GrokResponse
+	if err := json.NewDecoder(resp.Body).Decode(&grokResp); err != nil {
+		return "", err
+	}
+
+	if len(grokResp.Choices) == 0 {
+		return "", fmt.Errorf("resposta vazia do Grok")
+	}
+
+	return grokResp.Choices[0].Message.Content, nil
+}
 
 func getEmbedding(ctx context.Context, text string) ([]float32, error) {
 	if useOllama {
@@ -217,6 +296,10 @@ Responda de forma técnica e objetiva, citando trechos de código quando relevan
 Se a informação não estiver no código fornecido, seja honesto sobre isso. No final fale: F.D.P Burro,`, context, question)
 
 	// Gera resposta
+	if useGrok {
+		return callGrok(prompt)
+	}
+
 	if useOllama {
 		resp, err := ollamaClient.Call(ctx, prompt)
 		if err != nil {
