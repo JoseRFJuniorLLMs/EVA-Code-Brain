@@ -110,7 +110,7 @@ func getIndexerEmbedding(ctx context.Context, text string) ([]float32, error) {
 	return res.Embedding.Values, nil
 }
 
-func processFile(ctx context.Context, path string, rootDir string, projectName string) (int, error) {
+func processFile(ctx context.Context, path string, rootDir string, projectName string, force bool) (int, error) {
 	contentBytes, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
@@ -123,15 +123,17 @@ func processFile(ctx context.Context, path string, rootDir string, projectName s
 	relPath, _ := filepath.Rel(rootDir, path)
 	ext := filepath.Ext(path)
 
-	// Verifica se mudou
-	var existingID int
-	err = db.QueryRowContext(ctx,
-		"SELECT id FROM project_codebase WHERE file_path = $1 AND last_modified_hash = $2 AND project_name = $3 LIMIT 1",
-		relPath, fileHash, projectName).Scan(&existingID)
+	// Verifica se mudou (Ignora se force=true)
+	if !force {
+		var existingID int
+		err = db.QueryRowContext(ctx,
+			"SELECT id FROM project_codebase WHERE file_path = $1 AND last_modified_hash = $2 AND project_name = $3 LIMIT 1",
+			relPath, fileHash, projectName).Scan(&existingID)
 
-	if err == nil {
-		fmt.Printf("⏭️  Pulando (não mudou): %s\n", relPath)
-		return 0, nil
+		if err == nil {
+			fmt.Printf("⏭️  Pulando (não mudou): %s\n", relPath)
+			return 0, nil
+		}
 	}
 
 	// Remove antigo
@@ -182,7 +184,7 @@ func processFile(ctx context.Context, path string, rootDir string, projectName s
 	return inserted, nil
 }
 
-func runIndexer(rootDir string) {
+func runIndexer(rootDir string, force bool) {
 	fmt.Println(strings.Repeat("=", 60))
 	fmt.Println("🧠 CODE BRAIN - Indexador (Go Edition)")
 	fmt.Println(strings.Repeat("=", 60))
@@ -266,7 +268,7 @@ func runIndexer(rootDir string) {
 	filesProcessed := 0
 
 	for _, file := range files {
-		chunksCount, err := processFile(ctx, file, rootDir, projectName)
+		chunksCount, err := processFile(ctx, file, rootDir, projectName, force)
 		if err != nil {
 			log.Printf("Erro em %s: %v", file, err)
 		} else if chunksCount > 0 {

@@ -595,11 +595,12 @@ func main() {
 	// Flags de linha de comando
 	indexMode := flag.Bool("index", false, "Modo indexador: varre diretório e indexa código")
 	dirPath := flag.String("dir", ".", "Diretório para indexar (usado com -index)")
+	forceMode := flag.Bool("force", false, "Forçar re-indexação ignorando hash check")
 	flag.Parse()
 
 	// Se estiver no modo indexador, roda e sai
 	if *indexMode {
-		runIndexer(*dirPath)
+		runIndexer(*dirPath, *forceMode)
 		return
 	}
 
