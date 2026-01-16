@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Script de migração para V2 (Semantic Chunking)
+export PGPASSWORD='Debian23@'
 
 echo "🔄 Migrando banco de dados para V2..."
 
