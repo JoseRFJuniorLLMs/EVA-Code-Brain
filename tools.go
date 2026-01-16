@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // ============================================
@@ -165,7 +168,49 @@ func initTools() {
 		Execute: executeFindReferences,
 	})
 
-	// Tool 5: analyze_project
+	// Tool 5: query_database
+	toolRegistry.Register(&Tool{
+		Name:        "query_database",
+		Description: "Executa uma consulta SQL no banco de dados para buscar dados reais (vendas, usuários, logs, etc).",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"sql": map[string]interface{}{
+					"type":        "string",
+					"description": "Consulta SQL (ex: 'SELECT * FROM usuarios LIMIT 5')",
+				},
+			},
+			"required": []string{"sql"},
+		},
+		Execute: executeDatabaseQuery,
+	})
+
+	// Tool 6: call_api
+	toolRegistry.Register(&Tool{
+		Name:        "call_api",
+		Description: "Faz uma requisição HTTP (GET ou POST) para uma API externa ou interna (ex: sua API Python).",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"url": map[string]interface{}{
+					"type":        "string",
+					"description": "URL do endpoint (ex: 'http://localhost:8000/health')",
+				},
+				"method": map[string]interface{}{
+					"type":        "string",
+					"description": "Método HTTP: 'GET' ou 'POST'",
+				},
+				"payload": map[string]interface{}{
+					"type":        "string",
+					"description": "JSON opcional para o corpo da requisição POST.",
+				},
+			},
+			"required": []string{"url", "method"},
+		},
+		Execute: executeCallAPI,
+	})
+
+	// Tool 7: analyze_project
 	toolRegistry.Register(&Tool{
 		Name:        "analyze_project",
 		Description: "Retorna estatísticas sobre o projeto (total de arquivos, linguagens, tamanho).",
@@ -413,6 +458,90 @@ func executeAnalyzeProject(ctx context.Context, params map[string]interface{}) (
 	}
 
 	return output, nil
+}
+
+func executeDatabaseQuery(ctx context.Context, params map[string]interface{}) (string, error) {
+	sqlStr, ok := params["sql"].(string)
+	if !ok {
+		return "", fmt.Errorf("parâmetro 'sql' inválido")
+	}
+
+	// Executa query
+	rows, err := db.QueryContext(ctx, sqlStr)
+	if err != nil {
+		return "", fmt.Errorf("erro SQL: %v", err)
+	}
+	defer rows.Close()
+
+	cols, _ := rows.Columns()
+	output := "| " + strings.Join(cols, " | ") + " |\n"
+	output += "| " + strings.Repeat("--- | ", len(cols)) + "\n"
+
+	count := 0
+	for rows.Next() {
+		if count >= 20 { // Limite de visualização para não travar
+			output += "\n... (mais resultados omitidos)"
+			break
+		}
+
+		// Scan dinâmico
+		values := make([]interface{}, len(cols))
+		valuePtrs := make([]interface{}, len(cols))
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err := rows.Scan(valuePtrs...); err != nil {
+			continue
+		}
+
+		rowStr := "| "
+		for _, val := range values {
+			// Formata nulos e tipos complexos
+			b, _ := json.Marshal(val)
+			rowStr += string(b) + " | "
+		}
+		output += rowStr + "\n"
+		count++
+	}
+
+	if count == 0 {
+		return "Query executada com sucesso, mas não retornou resultados.", nil
+	}
+
+	return output, nil
+}
+
+func executeCallAPI(ctx context.Context, params map[string]interface{}) (string, error) {
+	urlStr, _ := params["url"].(string)
+	method, _ := params["method"].(string)
+	payload, _ := params["payload"].(string)
+
+	var req *http.Request
+	var err error
+
+	if strings.ToUpper(method) == "POST" {
+		req, err = http.NewRequestWithContext(ctx, "POST", urlStr, strings.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
+	} else {
+		req, err = http.NewRequestWithContext(ctx, "GET", urlStr, nil)
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("erro na requisição: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	status := resp.Status
+
+	return fmt.Sprintf("Status: %s\n\nResposta:\n%s", status, string(body)), nil
 }
 
 // ============================================
