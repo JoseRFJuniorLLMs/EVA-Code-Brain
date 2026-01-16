@@ -4,11 +4,15 @@
 
 echo "🔄 Migrando banco de dados para V2..."
 
+echo "🔄 Migrando banco de dados para V2 (Semantic Columns)..."
 psql -h 104.248.219.200 -U postgres -d eva-db -f v2_migration.sql
 
+echo "🔄 Migrando banco de dados para V3 (Full Text Search)..."
+psql -h 104.248.219.200 -U postgres -d eva-db -f v3_migration.sql
+
 if [ $? -eq 0 ]; then
-    echo "✅ Migração concluída com sucesso!"
-    echo "Novas colunas adicionadas: chunk_type, symbol_name, start_line, end_line"
+    echo "✅ Migrações concluídas com sucesso!"
+    echo "FTS e semântica ativos."
 else
     echo "❌ Erro na migração!"
     exit 1

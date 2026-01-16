@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS project_codebase (
     start_line INTEGER,
     end_line INTEGER,
     context_info TEXT,
+    content_fts tsvector GENERATED ALWAYS AS (to_tsvector('english', content)) STORED,
     last_modified_hash TEXT,
     file_size INTEGER,
     language TEXT,

@@ -38,6 +38,7 @@ type SearchResult struct {
 	Symbol     string  `json:"symbol"`     // NEW
 	StartLine  int     `json:"start_line"` // NEW
 	EndLine    int     `json:"end_line"`   // NEW
+	Score      float64 `json:"score"`      // RRF Score
 }
 
 type ChatRequest struct {

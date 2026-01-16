@@ -188,7 +188,7 @@ func executeSearchCode(ctx context.Context, params map[string]interface{}) (stri
 		limit = int(l)
 	}
 
-	results, err := searchCodebase(ctx, query, limit)
+	results, err := searchHybrid(ctx, query, limit)
 	if err != nil {
 		return "", err
 	}
