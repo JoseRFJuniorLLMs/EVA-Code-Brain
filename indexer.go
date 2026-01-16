@@ -140,16 +140,24 @@ func processFile(ctx context.Context, path string, rootDir string) (int, error) 
 	}
 
 	// Chunka e insere
-	textChunks := chunks(content, ChunkSize, ChunkOverlap)
-	if len(textChunks) == 0 {
+	chunker := NewSemanticChunker()
+	semanticChunks, err := chunker.Chunk(path, content)
+	if err != nil {
+		log.Printf("⚠️  Erro no semantic chunking de %s (usando fallback): %v", relPath, err)
+		// Fallback é automático dentro do chunker se falhar
+	}
+
+	if len(semanticChunks) == 0 {
 		return 0, nil
 	}
 
-	fmt.Printf("📄 Processando: %s (%d chunks)\n", relPath, len(textChunks))
+	fmt.Printf("📄 Processando: %s (%d semantic chunks)\n", relPath, len(semanticChunks))
 
 	inserted := 0
-	for i, chunkText := range textChunks {
-		embedding, err := getIndexerEmbedding(ctx, chunkText)
+	for i, chunk := range semanticChunks {
+		// Embed content gets context for better vector search
+		embedContent := chunk.Context + "\n" + chunk.Content
+		embedding, err := getIndexerEmbedding(ctx, embedContent)
 		if err != nil {
 			log.Printf("⚠️  Erro no embedding chunk %d de %s: %v", i, relPath, err)
 			continue
@@ -157,9 +165,10 @@ func processFile(ctx context.Context, path string, rootDir string) (int, error) 
 
 		_, err = db.ExecContext(ctx, `
 			INSERT INTO project_codebase 
-			(file_path, chunk_index, content, embedding, last_modified_hash, file_size, language)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-			relPath, i, chunkText, pgvector.NewVector(embedding), fileHash, fileSize, ext,
+			(file_path, chunk_index, content, embedding, last_modified_hash, file_size, language, chunk_type, symbol_name, start_line, end_line, context_info)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+			relPath, i, chunk.Content, pgvector.NewVector(embedding), fileHash, fileSize, ext,
+			chunk.Type, chunk.Name, chunk.StartLine, chunk.EndLine, chunk.Context,
 		)
 
 		if err != nil {

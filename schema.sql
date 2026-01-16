@@ -8,6 +8,11 @@ CREATE TABLE IF NOT EXISTS project_codebase (
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     embedding vector(768), -- Dimension for text-embedding-004
+    chunk_type TEXT,
+    symbol_name TEXT,
+    start_line INTEGER,
+    end_line INTEGER,
+    context_info TEXT,
     last_modified_hash TEXT,
     file_size INTEGER,
     language TEXT,

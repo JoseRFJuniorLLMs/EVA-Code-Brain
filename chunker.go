@@ -1,0 +1,178 @@
+package main
+
+import (
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"strings"
+)
+
+// Chunk represents a semantic unit of code
+type Chunk struct {
+	Type      string // "function", "method", "type", "import", "generic"
+	Name      string // Function/type name
+	Content   string // Full code
+	Context   string // Surrounding context (imports, package)
+	StartLine int
+	EndLine   int
+}
+
+// SemanticChunker handles splitting code into semantic chunks
+type SemanticChunker struct{}
+
+func NewSemanticChunker() *SemanticChunker {
+	return &SemanticChunker{}
+}
+
+// Chunk splits content based on file extension
+func (sc *SemanticChunker) Chunk(filePath string, content string) ([]Chunk, error) {
+	if strings.HasSuffix(filePath, ".go") {
+		return sc.chunkGo(content)
+	}
+	// TODO: Add Python, JS, SQL parsers
+	return sc.chunkGeneric(content)
+}
+
+// chunkGo parses Go code using AST
+func (sc *SemanticChunker) chunkGo(content string) ([]Chunk, error) {
+	fset := token.NewFileSet()
+	node, err := parser.ParseFile(fset, "", content, parser.ParseComments)
+	if err != nil {
+		// Fallback to generic if parse fails (snippet might be incomplete)
+		return sc.chunkGeneric(content)
+	}
+
+	var chunks []Chunk
+
+	// Extract package and imports for context
+	pkgName := node.Name.Name
+	var imports []string
+	for _, imp := range node.Imports {
+		imports = append(imports, fmt.Sprintf("%s", imp.Path.Value))
+	}
+	contextStr := fmt.Sprintf("package %s\nimport (%s)", pkgName, strings.Join(imports, ", "))
+
+	// Traverse declarations
+	for _, decl := range node.Decls {
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			// Function or Method
+			start := fset.Position(d.Pos()).Line
+			end := fset.Position(d.End()).Line
+
+			// Extract content exactly including comments
+			code := extractLines(content, start, end)
+
+			name := d.Name.Name
+			chunkType := "function"
+			if d.Recv != nil {
+				chunkType = "method"
+				// Add receiver info to name if desired, e.g. "Receiver.Method"
+			}
+
+			chunks = append(chunks, Chunk{
+				Type:      chunkType,
+				Name:      name,
+				Content:   code,
+				Context:   contextStr,
+				StartLine: start,
+				EndLine:   end,
+			})
+
+		case *ast.GenDecl:
+			// Types, Consts, Vars
+			if d.Tok == token.TYPE {
+				start := fset.Position(d.Pos()).Line
+				end := fset.Position(d.End()).Line
+				code := extractLines(content, start, end)
+
+				for _, spec := range d.Specs {
+					if ts, ok := spec.(*ast.TypeSpec); ok {
+						chunks = append(chunks, Chunk{
+							Type:      "type",
+							Name:      ts.Name.Name,
+							Content:   code,
+							Context:   contextStr,
+							StartLine: start,
+							EndLine:   end,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// If no significant chunks found (e.g. only main with no funcs or just vars),
+	// or if the file was parsed but yielded 0 chunks, fallback to generic
+	if len(chunks) == 0 {
+		return sc.chunkGeneric(content)
+	}
+
+	return chunks, nil
+}
+
+// chunkGeneric splits by paragraphs/blocks as fallback
+func (sc *SemanticChunker) chunkGeneric(content string) ([]Chunk, error) {
+	var chunks []Chunk
+	lines := strings.Split(content, "\n")
+
+	const maxChunkSize = 800
+	const overlap = 100
+
+	var currentChunk strings.Builder
+	startLine := 1
+	currentLines := 0
+
+	for i, line := range lines {
+		if currentChunk.Len()+len(line) > maxChunkSize && currentChunk.Len() > 0 {
+			// Save current chunk
+			chunks = append(chunks, Chunk{
+				Type:      "generic",
+				Name:      "block",
+				Content:   currentChunk.String(),
+				Context:   "",
+				StartLine: startLine,
+				EndLine:   startLine + currentLines,
+			})
+
+			// Reset with overlap
+			// For simplicity in this generic version, just hard reset or keep last few lines
+			// Implementing proper overlap requires keeping a buffer of lines
+			currentChunk.Reset()
+			startLine = i + 1
+			currentLines = 0
+		}
+
+		currentChunk.WriteString(line + "\n")
+		currentLines++
+	}
+
+	// Add remaining
+	if currentChunk.Len() > 0 {
+		chunks = append(chunks, Chunk{
+			Type:      "generic",
+			Name:      "block",
+			Content:   currentChunk.String(),
+			Context:   "",
+			StartLine: startLine,
+			EndLine:   startLine + currentLines,
+		})
+	}
+
+	return chunks, nil
+}
+
+// Helper to extract exact lines from content
+func extractLines(content string, start, end int) string {
+	lines := strings.Split(content, "\n")
+	if start < 1 {
+		start = 1
+	}
+	if end > len(lines) {
+		end = len(lines)
+	}
+
+	// zero-based index
+	return strings.Join(lines[start-1:end], "\n")
+}

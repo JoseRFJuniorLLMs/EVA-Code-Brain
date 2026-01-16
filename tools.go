@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"strings"
 )
 
 // ============================================
@@ -194,11 +196,31 @@ func executeSearchCode(ctx context.Context, params map[string]interface{}) (stri
 	// Formata resultados
 	output := fmt.Sprintf("Encontrados %d resultados:\n\n", len(results))
 	for i, r := range results {
-		output += fmt.Sprintf("%d. %s (chunk %d, similaridade: %.2f)\n```\n%s\n```\n\n",
-			i+1, r.FilePath, r.ChunkIndex, r.Similarity, r.Content)
+		meta := ""
+		if r.Type != "" {
+			meta = fmt.Sprintf(" [%s: %s]", r.Type, r.Symbol)
+		}
+		output += fmt.Sprintf("%d. %s%s (chunk %d, linhas %d-%d, similaridade: %.2f)\n```%s\n%s\n```\n\n",
+			i+1, r.FilePath, meta, r.ChunkIndex, r.StartLine, r.EndLine, r.Similarity, detectLanguage(r.FilePath), r.Content)
 	}
 
 	return output, nil
+}
+
+func detectLanguage(path string) string {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".go":
+		return "go"
+	case ".py":
+		return "python"
+	case ".js":
+		return "javascript"
+	case ".sql":
+		return "sql"
+	default:
+		return ""
+	}
 }
 
 func executeGetFile(ctx context.Context, params map[string]interface{}) (string, error) {

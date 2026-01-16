@@ -34,6 +34,10 @@ type SearchResult struct {
 	ChunkIndex int     `json:"chunk_index"`
 	Content    string  `json:"content"`
 	Similarity float64 `json:"similarity"`
+	Type       string  `json:"type"`       // NEW
+	Symbol     string  `json:"symbol"`     // NEW
+	StartLine  int     `json:"start_line"` // NEW
+	EndLine    int     `json:"end_line"`   // NEW
 }
 
 type ChatRequest struct {
@@ -258,6 +262,10 @@ func searchCodebase(ctx context.Context, query string, limit int) ([]SearchResul
 			file_path,
 			chunk_index,
 			content,
+			chunk_type,
+			symbol_name,
+			start_line,
+			end_line,
 			1 - (embedding <=> $1) AS similarity
 		FROM project_codebase
 		WHERE 1 - (embedding <=> $1) > 0.5
@@ -274,7 +282,7 @@ func searchCodebase(ctx context.Context, query string, limit int) ([]SearchResul
 	var results []SearchResult
 	for rows.Next() {
 		var r SearchResult
-		if err := rows.Scan(&r.FilePath, &r.ChunkIndex, &r.Content, &r.Similarity); err != nil {
+		if err := rows.Scan(&r.FilePath, &r.ChunkIndex, &r.Content, &r.Type, &r.Symbol, &r.StartLine, &r.EndLine, &r.Similarity); err != nil {
 			log.Println("Erro ao escanear linha:", err)
 			continue
 		}
