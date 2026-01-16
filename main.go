@@ -481,22 +481,31 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Save User Message
+	// Initialize Memory Service
+	memoryService := NewMemoryService(db)
+
+	// Save User Message with metadata (will be populated after code search)
+	userMetadata := MessageMetadata{}
 	if req.SessionID != "" {
-		_, _ = db.ExecContext(r.Context(), "INSERT INTO conversation_messages (session_id, role, content) VALUES ($1, $2, $3)", req.SessionID, "user", req.Question)
+		_, err := memoryService.SaveMessage(r.Context(), req.SessionID, "user", req.Question, userMetadata)
+		if err != nil {
+			log.Printf("⚠️  Failed to save user message: %v", err)
+		}
 	}
 
-	// Fetch History (Last 10 messages)
+	// Build Smart Context Window (summary + relevant + recent)
 	history := ""
 	if req.SessionID != "" {
-		rows, err := db.QueryContext(r.Context(), "SELECT role, content FROM conversation_messages WHERE session_id = $1 ORDER BY created_at ASC LIMIT 10", req.SessionID)
-		if err == nil {
-			defer rows.Close()
-			for rows.Next() {
-				var role, content string
-				rows.Scan(&role, &content)
-				history += fmt.Sprintf("%s: %s\n", role, content)
+		contextWindow, err := memoryService.BuildContextWindow(r.Context(), req.SessionID, req.Question)
+		if err != nil {
+			log.Printf("⚠️  Failed to build context window: %v", err)
+			// Fallback to simple recent messages
+			recentMessages, _ := memoryService.GetRecentMessages(r.Context(), req.SessionID, 10)
+			for _, msg := range recentMessages {
+				history += fmt.Sprintf("%s: %s\n", msg.Role, msg.Content)
 			}
+		} else {
+			history = contextWindow
 		}
 	}
 
@@ -508,22 +517,31 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepara Contexto com Histórico + Código
-	// Note: generateAnswer must be updated to handle history, or we prepend/append here
-	// For now, let's prepend history to the question sent to generateAnswer
-	// (or update generateAnswer signature - better to update signature later, for now hack it into prompt inside logic)
-
 	// Gera resposta
-	answer, err := generateAnswer(r.Context(), req.Question, req.Model, searchResults, history) // Added history param
+	answer, err := generateAnswer(r.Context(), req.Question, req.Model, searchResults, history)
 	if err != nil {
 		log.Println("Erro ao gerar resposta:", err)
 		respondWithError(w, http.StatusInternalServerError, "Erro ao gerar resposta: "+err.Error())
 		return
 	}
 
-	// Save Assistant Message
+	// Extract metadata from search results and tools used
+	assistantMetadata := MessageMetadata{
+		FilesMentioned: extractFilesFromResults(searchResults),
+	}
+
+	// Save Assistant Message with metadata
 	if req.SessionID != "" {
-		_, _ = db.ExecContext(r.Context(), "INSERT INTO conversation_messages (session_id, role, content) VALUES ($1, $2, $3)", req.SessionID, "assistant", answer)
+		_, err = memoryService.SaveMessage(r.Context(), req.SessionID, "assistant", answer, assistantMetadata)
+		if err != nil {
+			log.Printf("⚠️  Failed to save assistant message: %v", err)
+		}
+
+		// Trigger async summarization check (non-blocking)
+		go func() {
+			ctx := context.Background()
+			_, _ = memoryService.GetOrCreateSummary(ctx, req.SessionID)
+		}()
 	}
 
 	// Extrai lista de arquivos únicos
