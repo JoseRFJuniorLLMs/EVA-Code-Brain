@@ -114,7 +114,11 @@ func initTools() {
 			"properties": map[string]interface{}{
 				"file_path": map[string]interface{}{
 					"type":        "string",
-					"description": "Caminho do arquivo (ex: 'main.go', 'src/auth.py')",
+					"description": "Caminho relativo do arquivo (ex: 'main.go', 'auth/login.py')",
+				},
+				"project_name": map[string]interface{}{
+					"type":        "string",
+					"description": "Opcional: Nome do projeto (ex: 'EVA-Back', 'EVA-Code-Brain') caso haja arquivos com nomes iguais.",
 				},
 			},
 			"required": []string{"file_path"},
@@ -200,8 +204,12 @@ func executeSearchCode(ctx context.Context, params map[string]interface{}) (stri
 		if r.Type != "" {
 			meta = fmt.Sprintf(" [%s: %s]", r.Type, r.Symbol)
 		}
-		output += fmt.Sprintf("%d. %s%s (chunk %d, linhas %d-%d, similaridade: %.2f)\n```%s\n%s\n```\n\n",
-			i+1, r.FilePath, meta, r.ChunkIndex, r.StartLine, r.EndLine, r.Similarity, detectLanguage(r.FilePath), r.Content)
+		proj := ""
+		if r.ProjectName != "" {
+			proj = fmt.Sprintf("[%s] ", r.ProjectName)
+		}
+		output += fmt.Sprintf("%d. %s%s%s (chunk %d, linhas %d-%d, similaridade: %.3f)\n```%s\n%s\n```\n\n",
+			i+1, proj, r.FilePath, meta, r.ChunkIndex, r.StartLine, r.EndLine, r.Score, detectLanguage(r.FilePath), r.Content)
 	}
 
 	return output, nil
@@ -228,14 +236,22 @@ func executeGetFile(ctx context.Context, params map[string]interface{}) (string,
 	if !ok {
 		return "", fmt.Errorf("parâmetro 'file_path' inválido")
 	}
+	projectName, _ := params["project_name"].(string)
 
-	// Busca todos os chunks do arquivo
-	rows, err := db.QueryContext(ctx, `
+	query := `
 		SELECT content, chunk_index
 		FROM project_codebase
 		WHERE file_path = $1
-		ORDER BY chunk_index
-	`, filePath)
+	`
+	args := []interface{}{filePath}
+	if projectName != "" {
+		query += " AND project_name = $2"
+		args = append(args, projectName)
+	}
+	query += " ORDER BY chunk_index"
+
+	// Busca todos os chunks do arquivo
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return "", err
 	}

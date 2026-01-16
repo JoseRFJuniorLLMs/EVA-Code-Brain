@@ -30,15 +30,16 @@ type SearchRequest struct {
 }
 
 type SearchResult struct {
-	FilePath   string  `json:"file_path"`
-	ChunkIndex int     `json:"chunk_index"`
-	Content    string  `json:"content"`
-	Similarity float64 `json:"similarity"`
-	Type       string  `json:"type"`       // NEW
-	Symbol     string  `json:"symbol"`     // NEW
-	StartLine  int     `json:"start_line"` // NEW
-	EndLine    int     `json:"end_line"`   // NEW
-	Score      float64 `json:"score"`      // RRF Score
+	FilePath    string  `json:"file_path"`
+	ChunkIndex  int     `json:"chunk_index"`
+	Content     string  `json:"content"`
+	Similarity  float64 `json:"similarity"`
+	Type        string  `json:"type"`         // NEW
+	Symbol      string  `json:"symbol"`       // NEW
+	StartLine   int     `json:"start_line"`   // NEW
+	EndLine     int     `json:"end_line"`     // NEW
+	ProjectName string  `json:"project_name"` // NEW
+	Score       float64 `json:"score"`        // RRF Score
 }
 
 type ChatRequest struct {

@@ -36,14 +36,14 @@ func searchHybrid(ctx context.Context, query string, limit int) ([]SearchResult,
 
 	// Process Vector Results
 	for rank, r := range vectorResults {
-		key := fmt.Sprintf("%s:%d", r.FilePath, r.ChunkIndex)
+		key := fmt.Sprintf("%s:%s:%d", r.ProjectName, r.FilePath, r.ChunkIndex)
 		scores[key] += 1.0 / (k + float64(rank+1))
 		resultsMap[key] = r
 	}
 
 	// Process Keyword Results
 	for rank, r := range keywordResults {
-		key := fmt.Sprintf("%s:%d", r.FilePath, r.ChunkIndex)
+		key := fmt.Sprintf("%s:%s:%d", r.ProjectName, r.FilePath, r.ChunkIndex)
 		scores[key] += 1.0 / (k + float64(rank+1))
 
 		// If exists (found by vector too), prefer the one with metadata if available
@@ -87,7 +87,7 @@ func searchVector(ctx context.Context, query string, limit int) ([]SearchResult,
 	rows, err := db.QueryContext(ctx, `
 		SELECT 
 			file_path, chunk_index, content, 
-			chunk_type, symbol_name, start_line, end_line,
+			chunk_type, symbol_name, start_line, end_line, project_name,
 			1 - (embedding <=> $1) AS similarity
 		FROM project_codebase
 		ORDER BY embedding <=> $1
@@ -106,7 +106,7 @@ func searchVector(ctx context.Context, query string, limit int) ([]SearchResult,
 		var sLine, eLine sql.NullInt32
 
 		if err := rows.Scan(&r.FilePath, &r.ChunkIndex, &r.Content,
-			&cType, &symName, &sLine, &eLine,
+			&cType, &symName, &sLine, &eLine, &r.ProjectName,
 			&r.Similarity); err != nil {
 			log.Println("Error scanning vector result:", err)
 			continue
@@ -130,7 +130,7 @@ func searchKeyword(ctx context.Context, query string, limit int) ([]SearchResult
 	rows, err := db.QueryContext(ctx, `
 		SELECT 
 			file_path, chunk_index, content, 
-			chunk_type, symbol_name, start_line, end_line,
+			chunk_type, symbol_name, start_line, end_line, project_name,
 			ts_rank(content_fts, websearch_to_tsquery('english', $1)) as rank
 		FROM project_codebase
 		WHERE content_fts @@ websearch_to_tsquery('english', $1)
@@ -151,7 +151,7 @@ func searchKeyword(ctx context.Context, query string, limit int) ([]SearchResult
 		var sLine, eLine sql.NullInt32
 
 		if err := rows.Scan(&r.FilePath, &r.ChunkIndex, &r.Content,
-			&cType, &symName, &sLine, &eLine,
+			&cType, &symName, &sLine, &eLine, &r.ProjectName,
 			&rank); err != nil {
 			log.Println("Error scanning keyword result:", err)
 			continue

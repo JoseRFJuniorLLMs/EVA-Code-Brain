@@ -14,6 +14,9 @@ PGPASSWORD='Debian23@' psql -h 104.248.219.200 -U postgres -d eva-db -f v3_migra
 echo "🔄 Migrando banco de dados para V4 (Conversational Memory)..."
 PGPASSWORD='Debian23@' psql -h 104.248.219.200 -U postgres -d eva-db -f v4_migration.sql
 
+echo "🔄 Migrando banco de dados para V5 (Multi-Project Support)..."
+PGPASSWORD='Debian23@' psql -h 104.248.219.200 -U postgres -d eva-db -f v5_migration.sql
+
 if [ $? -eq 0 ]; then
     echo "✅ Migrações concluídas com sucesso!"
     echo "FTS, semântica e memória ativos."

@@ -110,7 +110,7 @@ func getIndexerEmbedding(ctx context.Context, text string) ([]float32, error) {
 	return res.Embedding.Values, nil
 }
 
-func processFile(ctx context.Context, path string, rootDir string) (int, error) {
+func processFile(ctx context.Context, path string, rootDir string, projectName string) (int, error) {
 	contentBytes, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
@@ -126,8 +126,8 @@ func processFile(ctx context.Context, path string, rootDir string) (int, error) 
 	// Verifica se mudou
 	var existingID int
 	err = db.QueryRowContext(ctx,
-		"SELECT id FROM project_codebase WHERE file_path = $1 AND last_modified_hash = $2 LIMIT 1",
-		relPath, fileHash).Scan(&existingID)
+		"SELECT id FROM project_codebase WHERE file_path = $1 AND last_modified_hash = $2 AND project_name = $3 LIMIT 1",
+		relPath, fileHash, projectName).Scan(&existingID)
 
 	if err == nil {
 		fmt.Printf("⏭️  Pulando (não mudou): %s\n", relPath)
@@ -135,7 +135,7 @@ func processFile(ctx context.Context, path string, rootDir string) (int, error) 
 	}
 
 	// Remove antigo
-	_, err = db.ExecContext(ctx, "DELETE FROM project_codebase WHERE file_path = $1", relPath)
+	_, err = db.ExecContext(ctx, "DELETE FROM project_codebase WHERE file_path = $1 AND project_name = $2", relPath, projectName)
 	if err != nil {
 		return 0, fmt.Errorf("erro ao limpar antigos: %v", err)
 	}
@@ -166,10 +166,10 @@ func processFile(ctx context.Context, path string, rootDir string) (int, error) 
 
 		_, err = db.ExecContext(ctx, `
 			INSERT INTO project_codebase 
-			(file_path, chunk_index, content, embedding, last_modified_hash, file_size, language, chunk_type, symbol_name, start_line, end_line, context_info)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+			(file_path, chunk_index, content, embedding, last_modified_hash, file_size, language, chunk_type, symbol_name, start_line, end_line, context_info, project_name)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
 			relPath, i, chunk.Content, pgvector.NewVector(embedding), fileHash, fileSize, ext,
-			chunk.Type, chunk.Name, chunk.StartLine, chunk.EndLine, chunk.Context,
+			chunk.Type, chunk.Name, chunk.StartLine, chunk.EndLine, chunk.Context, projectName,
 		)
 
 		if err != nil {
@@ -262,7 +262,7 @@ func runIndexer(rootDir string) {
 	filesProcessed := 0
 
 	for _, file := range files {
-		chunksCount, err := processFile(ctx, file, rootDir)
+		chunksCount, err := processFile(ctx, file, rootDir, projectName)
 		if err != nil {
 			log.Printf("Erro em %s: %v", file, err)
 		} else if chunksCount > 0 {
