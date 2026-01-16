@@ -324,7 +324,8 @@ Exemplo:
 sequenceDiagram
 ...
 `+"`"+`
-Suporte a: sequenceDiagram, graph TD, erDiagram, classDiagram.`, context, history, question)
+Suporte a: sequenceDiagram, graph TD, erDiagram, classDiagram.
+IMPORTANTE: NÃO gere HTML ou ASCII art. APENAS BLOCOS DE CÓDIGO MERMAID.`, context, history, question)
 
 	// Seleção de Modelo
 	log.Printf("🤖 Gerando resposta com modelo: %s", model)

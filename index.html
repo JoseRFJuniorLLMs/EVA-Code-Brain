@@ -403,11 +403,25 @@
         <button id="zenBtn" class="fab" onclick="toggleZen()">🧘</button>
         <div class="fab-status">Zen Mode</div>
 
+        <button id="pomodoroBtn" class="fab" onclick="togglePomodoro()">🍅</button>
+        <div class="fab-status">Pomodoro (45min)</div>
+
         <button id="voiceBtn" class="fab" onclick="toggleVoice()">🎤</button>
         <div class="fab-status">Toque para Falar</div>
 
         <button id="themeBtn" class="fab" onclick="toggleTheme()">🌙</button>
         <div class="fab-status">Tema</div>
+    </div>
+
+    <div id="pomodoro-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; align-items:center; justify-content:center; flex-direction:column;">
+        <h1 style="color:white; margin-bottom:20px;">🍅 ACABOU O TEMPO! HORA DA PAUSA</h1>
+        <div id="pomodoro-video-placeholder" style="width: 80%; max-width: 800px; aspect-ratio: 16/9; background:#000;">
+        </div>
+        <button onclick="stopPomodoroAlarm()"
+            style="margin-top: 30px; background: #ff4444; color: white; padding: 15px 30px; font-size: 18px;">RETORNAR
+            AO
+            FOCO (VOLTAR ZEN)</button>
     </div>
 
     <div id="youtube-player" style="opacity: 0; position: absolute; z-index: -1;"></div>
@@ -508,7 +522,7 @@
                 return;
             }
             const playerState = player.getPlayerState();
-            if (playerState !== 1) {
+            if (playerState !== 1) { // Not Playing
                 player.unMute();
                 player.setVolume(50);
                 player.playVideo();
@@ -517,7 +531,86 @@
             } else {
                 player.pauseVideo();
                 btn.style.boxShadow = 'none';
+                btn.style.opacity = '0.7';
             }
+        }
+
+        // Pomodoro Logic
+        let pomodoroTimer = null;
+        let pomodoroTimeLeft = 45 * 60; // 45 minutes
+        let alarmPlayer = null;
+
+        function togglePomodoro() {
+            if (pomodoroTimer) {
+                // Stop Timer
+                clearInterval(pomodoroTimer);
+                pomodoroTimer = null;
+                document.getElementById('pomodoroBtn').innerHTML = '🍅';
+                pomodoroTimeLeft = 45 * 60;
+                alert("Pomodoro Cancelado.");
+            } else {
+                // Start Timer
+                alert("🍅 Pomodoro Iniciado! 45 minutos de foco máximo.");
+                // Ensure Zen is playing if not already
+                if (player && player.getPlayerState() !== 1) toggleZen();
+
+                document.getElementById('pomodoroBtn').style.boxShadow = '0 0 20px #ff4444';
+
+                pomodoroTimer = setInterval(() => {
+                    pomodoroTimeLeft--;
+                    const m = Math.floor(pomodoroTimeLeft / 60);
+                    const s = pomodoroTimeLeft % 60;
+                    document.getElementById('pomodoroBtn').innerHTML = `${m}:${s < 10 ? '0' : ''}${s}`;
+
+                    if (pomodoroTimeLeft <= 0) {
+                        triggerPomodoroAlarm();
+                    }
+                }, 1000);
+            }
+        }
+
+        function triggerPomodoroAlarm() {
+            clearInterval(pomodoroTimer);
+            pomodoroTimer = null;
+            document.getElementById('pomodoroBtn').innerHTML = '🍅';
+            document.getElementById('pomodoroBtn').style.boxShadow = 'none';
+
+            // Pause Zen
+            if (player && player.getPlayerState() === 1) player.pauseVideo();
+
+            // Show Modal and Play Video
+            document.getElementById('pomodoro-modal').style.display = 'flex';
+
+            if (!alarmPlayer) {
+                alarmPlayer = new YT.Player('pomodoro-video-placeholder', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: 'UJBknAsxfrA',
+                    playerVars: {
+                        'start': 454,
+                        'autoplay': 1,
+                        'controls': 1
+                    },
+                    events: {
+                        'onStateChange': (event) => {
+                            if (event.data === YT.PlayerState.ENDED) {
+                                stopPomodoroAlarm();
+                            }
+                        }
+                    }
+                });
+            } else {
+                alarmPlayer.seekTo(454);
+                alarmPlayer.playVideo();
+            }
+        }
+
+        function stopPomodoroAlarm() {
+            document.getElementById('pomodoro-modal').style.display = 'none';
+            if (alarmPlayer) alarmPlayer.pauseVideo();
+
+            // Resume Zen
+            if (player) toggleZen();
         }
 
         function addMessage(role, content, sourceFiles = []) {
