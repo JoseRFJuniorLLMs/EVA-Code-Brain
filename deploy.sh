@@ -2,18 +2,13 @@
 
 # Configuration
 APP_NAME="eva-code-brain"
-PORT=8088
+PORT=666
 
 echo "[DEPLOY] Iniciando deploy do $APP_NAME..."
 
-# 1. Atualizar código (AGORA AUTOMÁTICO)
+# 1. Atualizar código
 echo "[DEPLOY] Atualizando repositório..."
 git pull origin main
-
-# 1.5. Rodar migrações (CRÍTICO)
-echo "[DEPLOY] Rodando migrações de banco de dados..."
-chmod +x migrate.sh
-./migrate.sh
 
 # 2. Matar processo antigo
 echo "[DEPLOY] Parando processos antigos..."
