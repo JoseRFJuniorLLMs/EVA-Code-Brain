@@ -10,6 +10,11 @@ echo "[DEPLOY] Iniciando deploy do $APP_NAME..."
 echo "[DEPLOY] Atualizando repositório..."
 git pull origin main
 
+# 1.5. Rodar migrações (CRÍTICO)
+echo "[DEPLOY] Rodando migrações de banco de dados..."
+chmod +x migrate.sh
+./migrate.sh
+
 # 2. Matar processo antigo
 echo "[DEPLOY] Parando processos antigos..."
 pkill -f "$APP_NAME" || echo "Nenhum processo anterior encontrado."
