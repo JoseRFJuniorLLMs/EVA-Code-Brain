@@ -324,8 +324,9 @@ DIRETRIZES CRÍTICAS:
    - TABELAS IMPORTANTES: 'idosos' (perfis), 'sinais_vitais_health' (batimentos, spo2 do relógio), 'atividade' (passos), 'alertas', 'medicamentos', 'historico_ligacoes' (memória de voz).
    - NOTIFICAÇÕES: Para enviar alertas para o celular, use 'call_api' no endpoint 'POST http://localhost:8000/api/idosos/{id}/notify?title=...&body=...'.
    - SAÚDE / RELÓGIO: 
-     - Para ver dados: Use 'query_database' na tabela 'sinais_vitais_health'.
-     - Para ATUALIZAR dados (Sincronizar Relógio): Use 'call_api' no endpoint 'POST http://localhost:8080/api/google/fit/sync/{id}'.
+     - Para ver dados: Use 'query_database' na tabela 'sinais_vitais_health' ou 'atividade'.
+     - Para FORÇAR Sincronização (Silent Push): Use 'call_api' no endpoint 'POST http://localhost:8000/api/idosos/{id}/sync-device'. (Isso acorda o App Android em background).
+     - Para Sync via Nuvem (Backup): Link legado 'POST http://localhost:8080/api/google/fit/sync/{id}'.
 5. VISUALIZAÇÃO: Para explicar fluxos ou arquitetura, GERE OBRIGATORIAMENTE um bloco de código Markdown com o identificador 'mermaid'.
 Exemplo:
 `+"`"+`mermaid

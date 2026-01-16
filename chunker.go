@@ -213,11 +213,25 @@ func (sc *SemanticChunker) chunkSQL(content string) ([]Chunk, error) {
 
 	for _, part := range parts {
 		trimmed := strings.TrimSpace(part)
+		numLines := strings.Count(part, "\n")
+
 		if trimmed == "" {
+			lineOffset += numLines
 			continue
 		}
 
 		upper := strings.ToUpper(trimmed)
+
+		// OPTIMIZATION: Ignore Data Dumps to prevent context window overflow
+		// We only want schema definitions (CREATE, ALTER, logic)
+		if strings.HasPrefix(upper, "INSERT INTO") ||
+			strings.HasPrefix(upper, "COPY ") ||
+			strings.HasPrefix(upper, "UPDATE ") ||
+			strings.HasPrefix(upper, "VALUES") {
+			lineOffset += numLines
+			continue
+		}
+
 		chunkType := "sql_statement"
 		name := "query"
 
@@ -235,9 +249,10 @@ func (sc *SemanticChunker) chunkSQL(content string) ([]Chunk, error) {
 			chunkType = "function"
 		} else if strings.Contains(upper, "CREATE TRIGGER") {
 			chunkType = "trigger"
+		} else if strings.Contains(upper, "ALTER TABLE") {
+			chunkType = "alter"
 		}
 
-		numLines := strings.Count(part, "\n")
 		chunks = append(chunks, Chunk{
 			Type:      chunkType,
 			Name:      name,
