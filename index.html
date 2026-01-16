@@ -334,10 +334,11 @@
         <div id="voiceStatus" class="fab-status">Toque para Falar</div>
     </div>
 
-    <audio id="zenAudio" loop>
-        <source src="zen.mp3" type="audio/mpeg">
-    </audio>
+    <div id="youtube-player" style="display:none;"></div>
 
+    // ... (rest of html) ...
+
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         // ============================================
         // Configurações
@@ -355,19 +356,53 @@
         let mediaStream = null;
         let playbackContext = null;
         let isActive = false;
+        
+        // YouTube Player
+        let player;
+        let isPlayerReady = false;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                videoId: 'e3T8ctg1D6I',
+                playerVars: {
+                    'listType': 'playlist',
+                    'list': 'RDe3T8ctg1D6I',
+                    'autoplay': 0,
+                    'controls': 0,
+                    'loop': 1
+                },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            isPlayerReady = true;
+            // Opcional: Definir volume inicial
+            event.target.setVolume(50); 
+        }
 
         // ZEN MODE
         function toggleZen() {
-            const audio = document.getElementById('zenAudio');
             const btn = document.getElementById('zenBtn');
 
-            if (audio.paused) {
-                audio.volume = 0.3;
-                audio.play().catch(e => alert("Erro ao tocar áudio: " + e.message));
+            if (!isPlayerReady) {
+                alert("Player do YouTube ainda carregando...");
+                return;
+            }
+
+            const playerState = player.getPlayerState();
+            
+            // 1 = Playing, 2 = Paused, 5 = Cued, -1 = Unstarted
+            if (playerState !== 1) { 
+                player.playVideo();
                 btn.style.opacity = '1';
                 btn.style.boxShadow = '0 0 20px #a855f7';
             } else {
-                audio.pause();
+                player.pauseVideo();
                 btn.style.boxShadow = 'none';
             }
         }

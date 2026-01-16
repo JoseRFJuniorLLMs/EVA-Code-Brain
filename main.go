@@ -296,37 +296,46 @@ Responda de forma técnica e objetiva, citando trechos de código quando relevan
 Se a informação não estiver no código fornecido, seja honesto sobre isso. No final fale: F.D.P Burro,`, context, question)
 
 	// Gera resposta
+	// 1. Tenta Grok (se ativado)
 	if useGrok {
-		return callGrok(prompt)
+		answer, err := callGrok(prompt)
+		if err == nil {
+			return answer, nil
+		}
+		log.Printf("⚠️ Erro no Grok (tentando fallback): %v", err)
 	}
 
+	// 2. Tenta Ollama (se ativado)
 	if useOllama {
 		resp, err := ollamaClient.Call(ctx, prompt)
+		if err == nil {
+			return resp, nil
+		}
+		log.Printf("⚠️ Erro no Ollama (tentando fallback): %v", err)
+	}
+
+	// 3. Tenta Gemini (último recurso)
+	if geminiModel != nil {
+		resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
 		if err != nil {
 			return "", err
 		}
-		return resp, nil
-	}
 
-	// Gera resposta com Gemini
-	resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
-	if err != nil {
-		return "", err
-	}
-
-	if resp == nil || len(resp.Candidates) == 0 {
-		return "", fmt.Errorf("resposta vazia do Gemini")
-	}
-
-	// Extrai texto da resposta
-	var answer string
-	for _, part := range resp.Candidates[0].Content.Parts {
-		if txt, ok := part.(genai.Text); ok {
-			answer += string(txt)
+		if resp == nil || len(resp.Candidates) == 0 {
+			return "", fmt.Errorf("resposta vazia do Gemini")
 		}
+
+		// Extrai texto da resposta
+		var answer string
+		for _, part := range resp.Candidates[0].Content.Parts {
+			if txt, ok := part.(genai.Text); ok {
+				answer += string(txt)
+			}
+		}
+		return answer, nil
 	}
 
-	return answer, nil
+	return "", fmt.Errorf("nenhum modelo de IA disponível ou todos falharam")
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
