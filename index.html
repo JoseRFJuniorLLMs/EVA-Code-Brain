@@ -17,6 +17,12 @@
     <!-- Marked.js for markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
+    <!-- Mermaid.js for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    </script>
+
     <style>
         :root {
             --bg-primary: #0f0f1e;
@@ -439,7 +445,20 @@
                 document.body.classList.add('light-mode');
                 document.getElementById('themeBtn').textContent = '☀️';
             }
+
+            // Session Management
+            if (!localStorage.getItem('eva_session_id')) {
+                localStorage.setItem('eva_session_id', crypto.randomUUID());
+            }
         });
+
+        function clearHistory() {
+            if (confirm('Isso vai iniciar uma nova conversa. O histórico antigo não aparecerá mais aqui.')) {
+                localStorage.setItem('eva_session_id', crypto.randomUUID());
+                document.getElementById('messages').innerHTML = '';
+                addMessage('assistant', 'Nova conversa iniciada! Como posso ajudar?');
+            }
+        }
 
         // YouTube Player
         const tag = document.createElement('script');
@@ -526,6 +545,17 @@
             // Apply syntax highlighting to code blocks
             if (typeof hljs !== 'undefined') {
                 messageDiv.querySelectorAll('pre code').forEach((block) => {
+                    // Check for Mermaid
+                    if (block.classList.contains('language-mermaid')) {
+                        const pre = block.parentElement;
+                        const div = document.createElement('div');
+                        div.className = 'mermaid';
+                        div.textContent = block.textContent;
+                        pre.replaceWith(div);
+                        mermaid.run({ nodes: [div] });
+                        return;
+                    }
+
                     hljs.highlightElement(block);
 
                     // Add copy button
@@ -577,7 +607,11 @@
                 const res = await fetch(`${API_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question, model: currentModel })
+                    body: JSON.stringify({
+                        question: question,
+                        model: currentModel,
+                        session_id: localStorage.getItem('eva_session_id') // NEW
+                    })
                 });
 
                 const loader = document.getElementById(loadingId);

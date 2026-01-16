@@ -42,8 +42,9 @@ type SearchResult struct {
 }
 
 type ChatRequest struct {
-	Question string `json:"question"`
-	Model    string `json:"model"` // 'grok', 'ollama', 'gemini', 'auto'
+	Question  string `json:"question"`
+	Model     string `json:"model"` // 'grok', 'ollama', 'gemini', 'auto'
+	SessionID string `json:"session_id"`
 }
 
 type ChatResponse struct {
@@ -293,7 +294,7 @@ func searchCodebase(ctx context.Context, query string, limit int) ([]SearchResul
 	return results, nil
 }
 
-func generateAnswer(ctx context.Context, question string, searchResults []SearchResult, model string) (string, error) {
+func generateAnswer(ctx context.Context, question string, model string, searchResults []SearchResult, history string) (string, error) {
 	// Monta contexto com os arquivos encontrados
 	context := "CÓDIGO RELEVANTE ENCONTRADO:\n\n"
 
@@ -307,11 +308,17 @@ func generateAnswer(ctx context.Context, question string, searchResults []Search
 
 %s
 
+HISTÓRICO DA CONVERSA:
+%s
+
 PERGUNTA DO USUÁRIO:
 %s
 
-Responda de forma técnica e objetiva, citando trechos de código quando relevante. 
-Se a informação não estiver no código fornecido, seja honesto sobre isso.`, context, question)
+DIRETRIZES CRÍTICAS:
+1. Responda de forma técnica e objetiva.
+2. IMPORTANTE: Se o usuário pedir para REFATORAR, MODIFICAR ou CORRIGIR um arquivo, você DEVE PRIMEIRO usar a ferramenta "get_file" para ler o conteúdo COMPLETO e ATUAL do arquivo. NÃO confie apenas nos trechos acima (chunks), pois podem estar incompletos ou desatualizados.
+3. Se a informação não estiver no código fornecido e você precisar ver o arquivo, CHAME a ferramenta "get_file".
+4. VISUALIZAÇÃO: Para explicar fluxos, arquitetura ou relacionamentos, você PODE e DEVE usar diagramas Mermaid (dentro de blocos de código ```mermaid). Suporte a: sequenceDiagram, graph TD, erDiagram, classDiagram.`, context, history, question)
 
 	// Seleção de Modelo
 	log.Printf("🤖 Gerando resposta com modelo: %s", model)
@@ -437,20 +444,70 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Session Management
+	if req.SessionID == "" {
+		// New Session
+		var sessionID string
+		err := db.QueryRowContext(r.Context(), "INSERT INTO conversation_sessions (user_id) VALUES ($1) RETURNING id", "default_user").Scan(&sessionID)
+		if err != nil {
+			log.Printf("Erro ao criar sessão: %v", err)
+			// Continue without session (stateless fallback)
+		} else {
+			req.SessionID = sessionID
+		}
+	} else {
+		// Verify if session exists
+		var exists bool
+		db.QueryRowContext(r.Context(), "SELECT EXISTS(SELECT 1 FROM conversation_sessions WHERE id = $1)", req.SessionID).Scan(&exists)
+		if !exists {
+			// If invalid provided, recreate
+			db.QueryRowContext(r.Context(), "INSERT INTO conversation_sessions (id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", req.SessionID, "default_user")
+		}
+	}
+
+	// Save User Message
+	if req.SessionID != "" {
+		_, _ = db.ExecContext(r.Context(), "INSERT INTO conversation_messages (session_id, role, content) VALUES ($1, $2, $3)", req.SessionID, "user", req.Question)
+	}
+
+	// Fetch History (Last 10 messages)
+	history := ""
+	if req.SessionID != "" {
+		rows, err := db.QueryContext(r.Context(), "SELECT role, content FROM conversation_messages WHERE session_id = $1 ORDER BY created_at ASC LIMIT 10", req.SessionID)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var role, content string
+				rows.Scan(&role, &content)
+				history += fmt.Sprintf("%s: %s\n", role, content)
+			}
+		}
+	}
+
 	// Busca código relevante
-	searchResults, err := searchCodebase(r.Context(), req.Question, 5)
+	searchResults, err := searchHybrid(r.Context(), req.Question, 5) // Use Hybrid Search!
 	if err != nil {
 		log.Println("Erro na busca:", err)
 		respondWithError(w, http.StatusInternalServerError, "Erro ao buscar código: "+err.Error())
 		return
 	}
 
+	// Prepara Contexto com Histórico + Código
+	// Note: generateAnswer must be updated to handle history, or we prepend/append here
+	// For now, let's prepend history to the question sent to generateAnswer
+	// (or update generateAnswer signature - better to update signature later, for now hack it into prompt inside logic)
+
 	// Gera resposta
-	answer, err := generateAnswer(r.Context(), req.Question, searchResults, req.Model)
+	answer, err := generateAnswer(r.Context(), req.Question, req.Model, searchResults, history) // Added history param
 	if err != nil {
 		log.Println("Erro ao gerar resposta:", err)
 		respondWithError(w, http.StatusInternalServerError, "Erro ao gerar resposta: "+err.Error())
 		return
+	}
+
+	// Save Assistant Message
+	if req.SessionID != "" {
+		_, _ = db.ExecContext(r.Context(), "INSERT INTO conversation_messages (session_id, role, content) VALUES ($1, $2, $3)", req.SessionID, "assistant", answer)
 	}
 
 	// Extrai lista de arquivos únicos
