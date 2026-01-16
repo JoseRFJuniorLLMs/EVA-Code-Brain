@@ -15,6 +15,7 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"github.com/pgvector/pgvector-go"
 	"github.com/tmc/langchaingo/llms/ollama"
+	"google.golang.org/api/option"
 )
 
 // Configuração do Indexador
@@ -222,9 +223,17 @@ func runIndexer(rootDir string) {
 
 		fmt.Printf("✅ Config: Chat=%s, Embed=%s\n", os.Getenv("OLLAMA_MODEL"), embedModel)
 	} else {
-		// TODO: Initialize Gemini client here if not using Ollama
-		fmt.Println("✨ Modo GEMINI ativado (ainda não implementado para embedding)")
-		log.Fatal("Erro: Gemini embedding não implementado. Use USE_OLLAMA_EMBED=true")
+		// Inicializa Gemini Client para o Indexador
+		apiKey := os.Getenv("GEMINI_API_KEY")
+		if apiKey == "" {
+			log.Fatal("Erro: GEMINI_API_KEY não configurada no .env")
+		}
+		client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+		if err != nil {
+			log.Fatal("Erro ao inicializar Gemini para indexador:", err)
+		}
+		indexerGeminiClient = client
+		fmt.Println("✨ Modo GEMINI ativado para embeddings")
 	}
 
 	var files []string
