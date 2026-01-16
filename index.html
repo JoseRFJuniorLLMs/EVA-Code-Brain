@@ -275,6 +275,37 @@
             }
         }
 
+        /* Model Selector */
+        .model-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 0 20px;
+        }
+
+        .model-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 179, 217, 0.3);
+            color: #ffb3d9;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .model-btn:hover {
+            background: rgba(255, 179, 217, 0.1);
+        }
+
+        .model-btn.active {
+            background: rgba(255, 179, 217, 0.2);
+            border-color: #ffb3d9;
+            box-shadow: 0 0 10px rgba(255, 179, 217, 0.2);
+        }
+
         .file-tag {
             display: inline-block;
             font-size: 11px;
@@ -312,6 +343,13 @@
             </div>
         </div>
 
+        <div class="model-selector">
+            <button class="model-btn active" onclick="setModel('auto')">Auto</button>
+            <button class="model-btn" onclick="setModel('grok')">Grok</button>
+            <button class="model-btn" onclick="setModel('ollama')">Ollama</button>
+            <button class="model-btn" onclick="setModel('gemini')">Gemini</button>
+        </div>
+
         <div class="input-area">
             <div class="input-wrapper">
                 <input type="text" id="questionInput" placeholder="Digite sua pergunta..."
@@ -334,11 +372,11 @@
         <div id="voiceStatus" class="fab-status">Toque para Falar</div>
     </div>
 
-    <div id="youtube-player" style="display:none;"></div>
+    <div id="youtube-player" style="opacity: 0; position: absolute; z-index: -1;"></div>
 
     // ... (rest of html) ...
 
-    <script src="https://www.youtube.com/iframe_api"></script>
+
     <script>
         // ============================================
         // Configurações
@@ -356,22 +394,47 @@
         let mediaStream = null;
         let playbackContext = null;
         let isActive = false;
+        let currentModel = 'auto';
+
+        function setModel(model) {
+            currentModel = model;
+            document.querySelectorAll('.model-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase() === model || (model === 'auto' && btn.textContent === 'Auto')) {
+                    btn.classList.add('active');
+                }
+            });
+            console.log("Modelo alterado para:", model);
+        }
 
         // YouTube Player
         let player;
         let isPlayerReady = false;
 
+        // Carrega API do YouTube de forma assíncrona
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // Carrega API do YouTube de forma assíncrona
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('youtube-player', {
-                height: '0',
-                width: '0',
+                height: '1',
+                width: '1',
                 videoId: 'e3T8ctg1D6I',
                 playerVars: {
                     'listType': 'playlist',
                     'list': 'RDe3T8ctg1D6I',
-                    'autoplay': 0,
+                    'autoplay': 1,
                     'controls': 0,
-                    'loop': 1
+                    'loop': 1,
+                    'mute': 1
                 },
                 events: {
                     'onReady': onPlayerReady
@@ -381,8 +444,8 @@
 
         function onPlayerReady(event) {
             isPlayerReady = true;
-            // Opcional: Definir volume inicial
-            event.target.setVolume(50);
+            event.target.mute();
+            event.target.pauseVideo();
         }
 
         // ZEN MODE
@@ -459,7 +522,7 @@
                 const res = await fetch(`${API_URL}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question })
+                    body: JSON.stringify({ question, model: currentModel })
                 });
 
                 const loader = document.getElementById(loadingId);

@@ -38,6 +38,7 @@ type SearchResult struct {
 
 type ChatRequest struct {
 	Question string `json:"question"`
+	Model    string `json:"model"` // 'grok', 'ollama', 'gemini', 'auto'
 }
 
 type ChatResponse struct {
@@ -276,7 +277,7 @@ func searchCodebase(ctx context.Context, query string, limit int) ([]SearchResul
 	return results, nil
 }
 
-func generateAnswer(ctx context.Context, question string, searchResults []SearchResult) (string, error) {
+func generateAnswer(ctx context.Context, question string, searchResults []SearchResult, model string) (string, error) {
 	// Monta contexto com os arquivos encontrados
 	context := "CÓDIGO RELEVANTE ENCONTRADO:\n\n"
 
@@ -296,39 +297,53 @@ PERGUNTA DO USUÁRIO:
 Responda de forma técnica e objetiva, citando trechos de código quando relevante. 
 Se a informação não estiver no código fornecido, seja honesto sobre isso. No final fale: F.D.P Burro,`, context, question)
 
-	// Gera resposta
-	// 1. Tenta Grok (se ativado)
-	if useGrok {
-		return callGrok(prompt) // Retorna erro direto se falhar (429, etc)
+	// Seleção de Modelo
+	log.Printf("🤖 Gerando resposta com modelo: %s", model)
+
+	// 1. Grok
+	if model == "grok" || (model == "auto" && useGrok) || (model == "" && useGrok) {
+		if useGrok {
+			return callGrok(prompt)
+		}
+		if model == "grok" {
+			return "", fmt.Errorf("Grok não está configurado")
+		}
 	}
 
-	// 2. Tenta Ollama (se ativado)
-	if useOllama {
-		return ollamaClient.Call(ctx, prompt)
+	// 2. Ollama
+	if model == "ollama" || (model == "auto" && useOllama) || (model == "" && useOllama) {
+		if useOllama {
+			return ollamaClient.Call(ctx, prompt)
+		}
+		if model == "ollama" {
+			return "", fmt.Errorf("Ollama não está configurado")
+		}
 	}
 
-	// 3. Fallback Gemini (Apenas se Grok e Ollama estiverem DESATIVADOS)
-	if geminiModel != nil {
-		resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
-		if err != nil {
-			return "", err
-		}
-
-		if resp == nil || len(resp.Candidates) == 0 {
-			return "", fmt.Errorf("resposta vazia do Gemini")
-		}
-
-		// Extrai texto da resposta
-		var answer string
-		for _, part := range resp.Candidates[0].Content.Parts {
-			if txt, ok := part.(genai.Text); ok {
-				answer += string(txt)
+	// 3. Gemini
+	if model == "gemini" || (model == "auto" && geminiModel != nil) || (model == "" && geminiModel != nil) {
+		if geminiModel != nil {
+			resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
+			if err != nil {
+				return "", err
 			}
+			if resp == nil || len(resp.Candidates) == 0 {
+				return "", fmt.Errorf("resposta vazia do Gemini")
+			}
+			var answer string
+			for _, part := range resp.Candidates[0].Content.Parts {
+				if txt, ok := part.(genai.Text); ok {
+					answer += string(txt)
+				}
+			}
+			return answer, nil
 		}
-		return answer, nil
+		if model == "gemini" {
+			return "", fmt.Errorf("Gemini não está configurado")
+		}
 	}
 
-	return "", fmt.Errorf("nenhum modelo de IA disponível")
+	return "", fmt.Errorf("nenhum modelo disponível para '%s'", model)
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
@@ -389,7 +404,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Gera resposta
-	answer, err := generateAnswer(r.Context(), req.Question, searchResults)
+	answer, err := generateAnswer(r.Context(), req.Question, searchResults, req.Model)
 	if err != nil {
 		log.Println("Erro ao gerar resposta:", err)
 		respondWithError(w, http.StatusInternalServerError, "Erro ao gerar resposta: "+err.Error())
