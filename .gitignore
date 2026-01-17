@@ -1,24 +1,50 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-venv/
+# EVA-Code-Brain
+
+Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+eva-code-brain
+codebrain
+
+# Test binary
+*.test
+
+# Output
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Environment
 .env
+.env.local
 
-# Go
-go.sum
-bin/
-dist/
-
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Node (if used in frontend dev)
-node_modules/
-
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Images (keep in assets/)
+*.png
+*.jpg
+*.jpeg
+!assets/*.png
+!assets/*.jpg
+!assets/*.jpeg
