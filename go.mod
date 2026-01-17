@@ -6,6 +6,7 @@ require (
 	github.com/google/generative-ai-go v0.15.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
+	github.com/neo4j/neo4j-go-driver/v5 v5.28.4
 	github.com/pgvector/pgvector-go v0.1.1
 	github.com/tmc/langchaingo v0.1.14
 	google.golang.org/api v0.218.0

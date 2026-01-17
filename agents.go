@@ -267,7 +267,20 @@ func (ma *MasterAgent) Delegate(ctx context.Context, query string, agentName str
 	var err error
 
 	if useOllama && ollamaClient != nil {
-		response, err = ollamaClient.Call(ctx, specializedPrompt)
+		// Use Tool Wrapper for ReAct loop
+		if ollamaToolWrapper != nil {
+			// Filter tools available to this agent
+			agentTools := make(map[string]Tool)
+			for _, toolName := range agent.Tools {
+				if t, ok := toolRegistry.Get(toolName); ok {
+					agentTools[toolName] = *t
+				}
+			}
+			response, err = ollamaToolWrapper.CallWithTools(ctx, specializedPrompt, agentTools)
+		} else {
+			// Fallback to simple call
+			response, err = ollamaClient.Call(ctx, specializedPrompt)
+		}
 	} else if useGrok {
 		response, err = callGrok(specializedPrompt)
 	} else if geminiModel != nil {

@@ -66,6 +66,7 @@ var (
 	// Ollama
 	ollamaClient      *ollama.LLM
 	ollamaEmbedClient *ollama.LLM
+	ollamaToolWrapper *OllamaToolClient
 	useOllama         bool
 	// Grok
 	useGrok    bool
@@ -191,6 +192,9 @@ func init() {
 		ollamaEmbedClient = embedLlm
 
 		log.Printf("✅ Ollama Inicializado: Chat=%s, Embed=%s", chatModel, embedModel)
+
+		// Wrapper for Tool Support
+		ollamaToolWrapper = NewOllamaToolClient(ollamaClient)
 	}
 
 	// Inicializa Google Gemini (Sempre necessário para embeddings se Ollama estiver off, ou se Grok estiver on)
